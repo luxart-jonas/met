@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<title>Met-App</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Jost:wght@300;400;500&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #000; color: #fff; font-family: 'Jost', sans-serif; font-weight: 300; height: 100vh; overflow: hidden; }
+
+  /* ── SETUP ─────────────────────────────────────────── */
+  #setup-screen {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 100vh; gap: 22px; padding: 40px; background: #0a0a0a; overflow-y: auto;
+  }
+  #setup-screen h1 {
+    font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 400;
+    color: #c9a84c; letter-spacing: 0.04em;
+  }
+  .section-label {
+    font-size: 11px; letter-spacing: 0.12em; color: #444;
+    text-transform: uppercase; align-self: flex-start; margin-bottom: -10px;
+  }
+  .divider { width: 100%; max-width: 420px; border: none; border-top: 1px solid #1a1a1a; }
+
+  .upload-zone {
+    border: 1px dashed #333; border-radius: 16px; padding: 22px 40px;
+    text-align: center; cursor: pointer; width: 100%; max-width: 420px;
+    display: block; position: relative; background: #111;
+  }
+  .upload-zone:active { border-color: #666; }
+  .upload-zone p { color: #555; font-size: 13px; margin-top: 5px; }
+  .upload-zone .icon { font-size: 28px; margin-bottom: 5px; }
+  .upload-zone input[type=file] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 16px; }
+  .loaded-ok { font-size: 13px; color: #4ade80; display: none; margin-top: -10px; }
+
+  .settings-row {
+    display: flex; align-items: center; gap: 12px;
+    color: #888; font-size: 14px; width: 100%; max-width: 420px;
+  }
+  .settings-row label { min-width: 110px; }
+  .settings-row input[type=range] { flex: 1; accent-color: #c9a84c; }
+  .settings-row span { min-width: 60px; color: #fff; font-size: 14px; text-align: right; }
+
+  .key-row { display: flex; gap: 8px; width: 100%; max-width: 420px; }
+  .key-row input {
+    flex: 1; background: #111; border: 1px solid #2a2a2a; border-radius: 100px;
+    padding: 11px 18px; color: #fff; font-family: 'Jost', sans-serif;
+    font-size: 13px; outline: none; -webkit-appearance: none;
+  }
+  .btn-small {
+    background: #1e1e1e; border: 1px solid #333; border-radius: 100px;
+    padding: 10px 18px; color: #aaa; font-family: 'Jost', sans-serif;
+    font-size: 12px; cursor: pointer; white-space: nowrap; -webkit-appearance: none;
+  }
+  .key-status { font-size: 12px; color: #4ade80; display: none; margin-top: -10px; align-self: flex-start; }
+
+  .start-btn {
+    background: #c9a84c; color: #000; border: none; border-radius: 100px;
+    padding: 14px 52px; font-family: 'Jost', sans-serif;
+    font-size: 14px; font-weight: 500; letter-spacing: 0.08em;
+    text-transform: uppercase; cursor: pointer; -webkit-appearance: none; transition: opacity 0.2s;
+  }
+  .start-btn:disabled { opacity: 0.3; cursor: default; }
+  .hint { font-size: 12px; color: #333; text-align: center; max-width: 340px; line-height: 1.6; }
+
+  /* ── DISPLAY ────────────────────────────────────────── */
+  #display-screen { display: none; position: fixed; inset: 0; background: #000; user-select: none; }
+
+  #art-img {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: contain; opacity: 0; transition: opacity 0.8s ease;
+  }
+  #art-img.visible { opacity: 1; }
+
+  #title-bar {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 40px 32px 28px;
+    background: linear-gradient(transparent, rgba(0,0,0,0.75));
+    opacity: 0; transition: opacity 0.8s ease; pointer-events: none;
+  }
+  #title-bar.visible { opacity: 1; }
+  #title-bar .art-titel {
+    font-family: 'Cormorant Garamond', serif; font-style: italic;
+    font-size: 22px; font-weight: 400; color: #fff; margin-bottom: 4px;
+  }
+  #title-bar .art-artist { font-size: 13px; color: rgba(255,255,255,0.6); letter-spacing: 0.06em; }
+
+  #info-btn {
+    position: absolute; bottom: 28px; right: 28px;
+    width: 88px; height: 88px; border-radius: 50%;
+    background: #c0392b; border: none; color: #fff;
+    font-size: 36px; font-weight: 600; cursor: pointer; -webkit-appearance: none;
+    opacity: 0; transition: opacity 0.8s ease;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 20px rgba(192,57,43,0.6);
+  }
+  #info-btn.visible { opacity: 1; pointer-events: auto; }
+
+  #funfact-overlay {
+    display: none; position: absolute; inset: 0;
+    background: rgba(0,0,0,0.55); align-items: center; justify-content: center;
+    padding: 40px 32px; backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+  }
+  #funfact-overlay.open { display: flex; }
+  .funfact-box {
+    max-width: 520px; width: 100%;
+    background: rgba(0,0,0,0.55); border-radius: 16px; padding: 28px 32px;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  }
+  .ff-label { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: #c9a84c; margin-bottom: 16px; }
+  .ff-titel { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 24px; color: #fff; margin-bottom: 6px; }
+  .ff-artist { font-size: 13px; color: rgba(255,255,255,0.5); letter-spacing: 0.06em; margin-bottom: 24px; }
+  .ff-text { font-size: 16px; line-height: 1.75; color: rgba(255,255,255,0.85); white-space: pre-line; }
+  #back-btn {
+    margin-top: 32px; background: transparent;
+    border: 1px solid rgba(255,255,255,0.2); border-radius: 100px;
+    padding: 10px 28px; color: rgba(255,255,255,0.5);
+    font-family: 'Jost', sans-serif; font-size: 12px;
+    letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; -webkit-appearance: none;
+  }
+
+  #video-feed { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+  canvas#diff-canvas { display: none; }
+
+  #motion-dot { display: none; }
+
+  #delete-btn {
+    position: absolute; top: 14px; left: 14px;
+    background: rgba(255,255,255,0.07); border: 0.5px solid rgba(255,255,255,0.12);
+    border-radius: 100px; padding: 8px 16px; font-size: 12px;
+    color: rgba(255,255,255,0.4); cursor: pointer; -webkit-appearance: none;
+    opacity: 0; transition: opacity 0.3s; letter-spacing: 0.06em;
+  }
+  #display-screen:hover #delete-btn { opacity: 1; }
+  #delete-confirm {
+    display: none; position: absolute; top: 14px; left: 14px;
+    background: rgba(180,30,20,0.85); border: 0.5px solid rgba(255,100,80,0.3);
+    border-radius: 100px; padding: 8px 16px; font-size: 12px;
+    color: rgba(255,255,255,0.9); cursor: pointer; -webkit-appearance: none;
+    letter-spacing: 0.06em; backdrop-filter: blur(4px);
+  }
+  #exit-btn {
+    position: absolute; top: 14px; right: 14px;
+    background: rgba(255,255,255,0.07); border: 0.5px solid rgba(255,255,255,0.12);
+    border-radius: 100px; padding: 8px 16px; font-size: 12px;
+    color: rgba(255,255,255,0.4); cursor: pointer; -webkit-appearance: none;
+    opacity: 0; transition: opacity 0.3s;
+  }
+  #display-screen:hover #exit-btn { opacity: 1; }
+
+  #status-bar {
+    position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%);
+    background: rgba(255,255,255,0.06); border: 0.5px solid rgba(255,255,255,0.1);
+    border-radius: 100px; padding: 7px 18px; font-size: 11px;
+    color: rgba(255,255,255,0.35); letter-spacing: 0.08em; white-space: nowrap;
+    opacity: 0; transition: opacity 0.3s;
+  }
+  #display-screen:hover #status-bar { opacity: 1; }
+
+  /* Ladeindikator für Prefetch */
+  #prefetch-dot {
+    position: absolute; bottom: 14px; right: 14px;
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #c9a84c; opacity: 0; transition: opacity 0.3s;
+  }
+  #prefetch-dot.loading { opacity: 0.5; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 0.2; } 50% { opacity: 0.7; } }
+</style>
+</head>
+<body>
+
+<!-- ── SETUP ─────────────────────────────────────────── -->
+<div id="setup-screen">
+  <h1>Met-App</h1>
+
+  <span class="section-label">Sound (optional)</span>
+  <label class="upload-zone" id="audio-zone">
+    <div class="icon">🔊</div>
+    <strong style="font-size:14px">Audio hochladen</strong>
+    <p>MP3, WAV — läuft im Loop</p>
+    <input type="file" id="audio-input" accept="*/*">
+  </label>
+  <div class="loaded-ok" id="audio-loaded">✓ Audio geladen</div>
+
+  <hr class="divider">
+  <span class="section-label">Filter (optional)</span>
+  <div style="width:100%;max-width:420px;position:relative;">
+    <input type="text" id="filter-input" placeholder="z.B. crucifixion · Rembrandt · landscape …"
+      style="width:100%;background:#111;border:1px solid #2a2a2a;border-radius:100px;
+             padding:12px 44px 12px 18px;color:#fff;font-family:'Jost',sans-serif;
+             font-size:14px;font-weight:300;outline:none;-webkit-appearance:none;
+             letter-spacing:0.02em;"
+      autocomplete="off" autocorrect="off" spellcheck="false">
+    <button onclick="document.getElementById('filter-input').value=''"
+      style="position:absolute;right:14px;top:50%;transform:translateY(-50%);
+             background:none;border:none;color:#444;font-size:16px;cursor:pointer;
+             line-height:1;padding:4px;">✕</button>
+  </div>
+  <div id="filter-hint" style="font-size:12px;color:#555;text-align:center;max-width:340px;line-height:1.5;margin-top:-8px;min-height:16px;">
+    Standard: painting (Met Museum)
+  </div>
+
+  <hr class="divider">
+  <span class="section-label">API Keys</span>
+  <div class="key-row">
+    <input type="password" id="anthropic-key-input" placeholder="Anthropic Key (sk-ant-…)" autocomplete="off" spellcheck="false">
+    <button class="btn-small" onclick="saveAnthropicKey()">Speichern</button>
+  </div>
+  <div class="key-status" id="anthropic-key-status">✓ Gespeichert</div>
+
+  <hr class="divider">
+  <span class="section-label">Einstellungen</span>
+
+  <div class="settings-row">
+    <label>Anzeigedauer</label>
+    <input type="range" id="duration-slider" min="30" max="600" step="10" value="180">
+    <span id="duration-label">3:00 min</span>
+  </div>
+  <div class="settings-row">
+    <label>Empfindlichkeit</label>
+    <input type="range" id="sensitivity-slider" min="2" max="30" step="1" value="10">
+    <span id="sensitivity-label">Mittel</span>
+  </div>
+  <div class="settings-row">
+    <label>Lautstärke</label>
+    <input type="range" id="volume-slider" min="0" max="100" step="5" value="70">
+    <span id="volume-label">70%</span>
+  </div>
+
+  <button class="start-btn" id="start-btn">Starten</button>
+  <p class="hint">Frontkamera erkennt Bewegung. Werke kommen live vom Met Museum New York.</p>
+</div>
+
+<!-- ── DISPLAY ───────────────────────────────────────── -->
+<div id="display-screen">
+  <img id="art-img" alt="">
+  <video id="video-feed" autoplay muted playsinline></video>
+  <canvas id="diff-canvas" width="160" height="120"></canvas>
+
+  <div id="title-bar">
+    <div class="art-titel" id="d-titel"></div>
+    <div class="art-artist" id="d-artist"></div>
+  </div>
+
+  <button id="info-btn">i</button>
+
+  <div id="funfact-overlay">
+    <div class="funfact-box">
+      <div class="ff-label">Funfact</div>
+      <div class="ff-titel" id="ff-titel"></div>
+      <div class="ff-artist" id="ff-artist"></div>
+      <div class="ff-text" id="ff-text">Wird geladen…</div>
+      <button id="back-btn">← Zurück</button>
+    </div>
+  </div>
+
+  <div id="motion-dot"></div>
+  <button id="delete-btn">✕ Sperren</button>
+  <button id="delete-confirm">Wirklich sperren?</button>
+  <div id="status-bar">WARTEN AUF BEWEGUNG</div>
+  <div id="prefetch-dot"></div>
+  <button id="exit-btn">✕ Beenden</button>
+</div>
+
+<script>
+// ── Konfiguration ─────────────────────────────────────
+const SUPABASE_URL = 'https://ormpszktwwiahjooukjk.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ybXBzemt0d3dpYWhqb291a2prIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4NzM5NTAsImV4cCI6MjA5NjQ0OTk1MH0.Jz4rKTlrvRbfdxS1e8fRkwXeD3CJsITeC6Q4lDBjfCc';
+const BLOCKED_TABLE = 'met_blocked';
+const MET_BASE = 'https://collectionapi.metmuseum.org/public/collection/v1';
+
+// ── State ─────────────────────────────────────────────
+let metIds        = [];        // alle IDs aus Met-Suche
+let shuffleQueue  = [];        // gemischte Reihenfolge
+let blockedIds    = new Set(); // gesperrte Met-IDs
+let currentWork   = null;      // aktuell angezeigtes Werk
+let nextWork      = null;      // vorbereitetes nächstes Werk (Prefetch)
+let prefetchPromise = null;    // laufender Prefetch
+let isDisplaying  = false;
+let hideTimer     = null;
+let stream        = null;
+let motionInterval= null;
+let prevPixels    = null;
+let sensitivityThreshold = 10;
+let displayDuration = 180;
+let volume        = 0.7;
+let audioEl       = null;
+let audioUnlocked = false;
+let fadeTimer     = null;
+
+const W = 160, H = 60;
+
+// ── DOM ───────────────────────────────────────────────
+const setupScreen   = document.getElementById('setup-screen');
+const displayScreen = document.getElementById('display-screen');
+const artImg        = document.getElementById('art-img');
+const titleBar      = document.getElementById('title-bar');
+const infoBtn       = document.getElementById('info-btn');
+const funfactOverlay= document.getElementById('funfact-overlay');
+const ffTitel       = document.getElementById('ff-titel');
+const ffArtist      = document.getElementById('ff-artist');
+const ffText        = document.getElementById('ff-text');
+const backBtn       = document.getElementById('back-btn');
+const statusBar     = document.getElementById('status-bar');
+const videoFeed     = document.getElementById('video-feed');
+const diffCanvas    = document.getElementById('diff-canvas');
+const exitBtn       = document.getElementById('exit-btn');
+const deleteBtn     = document.getElementById('delete-btn');
+const deleteConfirm = document.getElementById('delete-confirm');
+const prefetchDot   = document.getElementById('prefetch-dot');
+const filterInput   = document.getElementById('filter-input');
+const filterHint    = document.getElementById('filter-hint');
+const startBtn      = document.getElementById('start-btn');
+const ctx           = diffCanvas.getContext('2d');
+
+// ── Anthropic Key ─────────────────────────────────────
+function getAnthropicKey() { return localStorage.getItem('anthropic_api_key') || ''; }
+function saveAnthropicKey() {
+  const val = document.getElementById('anthropic-key-input').value.trim();
+  if (!val) return;
+  localStorage.setItem('anthropic_api_key', val);
+  document.getElementById('anthropic-key-input').value = '';
+  document.getElementById('anthropic-key-status').style.display = 'block';
+}
+if (getAnthropicKey()) document.getElementById('anthropic-key-status').style.display = 'block';
+
+// ── Slider ────────────────────────────────────────────
+const durationSlider   = document.getElementById('duration-slider');
+const durationLabel    = document.getElementById('duration-label');
+const sensitivitySlider= document.getElementById('sensitivity-slider');
+const sensitivityLabel = document.getElementById('sensitivity-label');
+const volumeSlider     = document.getElementById('volume-slider');
+const volumeLabel      = document.getElementById('volume-label');
+
+durationSlider.addEventListener('input', () => {
+  displayDuration = parseInt(durationSlider.value);
+  const m = Math.floor(displayDuration/60), s = displayDuration%60;
+  durationLabel.textContent = `${m}:${s.toString().padStart(2,'0')} min`;
+});
+sensitivitySlider.addEventListener('input', () => {
+  sensitivityThreshold = parseInt(sensitivitySlider.value);
+  const map = {2:'Sehr hoch',7:'Hoch',13:'Mittel',20:'Niedrig',30:'Sehr niedrig'};
+  const k = Object.keys(map).reduce((a,b) => Math.abs(b-sensitivityThreshold)<Math.abs(a-sensitivityThreshold)?b:a);
+  sensitivityLabel.textContent = map[k];
+});
+volumeSlider.addEventListener('input', () => {
+  volume = parseInt(volumeSlider.value) / 100;
+  volumeLabel.textContent = volumeSlider.value + '%';
+  if (audioEl) audioEl.volume = volume;
+});
+
+// ── Audio ─────────────────────────────────────────────
+document.getElementById('audio-input').addEventListener('change', e => {
+  const f = e.target.files[0]; if (!f) return;
+  audioEl = new Audio(URL.createObjectURL(f));
+  audioEl.loop = true; audioEl.volume = volume;
+  document.getElementById('audio-loaded').style.display = 'block';
+  displayScreen.addEventListener('click', () => { if (!audioUnlocked) { audioEl.play().then(() => { audioEl.pause(); audioEl.currentTime = 0; audioUnlocked = true; }).catch(()=>{}); } }, { once: true });
+});
+
+// ── Met Museum API ────────────────────────────────────
+async function fetchMetIds(query) {
+  const q = query.trim() || 'painting';
+  filterHint.textContent = `Suche nach "${q}"…`;
+  try {
+    // Erst mit Künstler-Filter versuchen
+    const artistRes = await fetch(`${MET_BASE}/search?q=${encodeURIComponent(q)}&hasImages=true&artistOrCulture=true`);
+    const artistData = await artistRes.json();
+    if (artistData.objectIDs && artistData.objectIDs.length > 10) {
+      return artistData.objectIDs;
+    }
+    // Fallback: allgemeine Suche (z.B. für Themen wie "crucifixion")
+    const res = await fetch(`${MET_BASE}/search?q=${encodeURIComponent(q)}&hasImages=true`);
+    const data = await res.json();
+    return data.objectIDs || [];
+  } catch(e) { return []; }
+}
+
+async function fetchMetObject(id) {
+  try {
+    const res = await fetch(`${MET_BASE}/objects/${id}`);
+    const d = await res.json();
+    if (!d.primaryImageSmall && !d.primaryImage) return null;
+    return {
+      id: d.objectID,
+      titel: d.title || '',
+      artist: d.artistDisplayName || '',
+      jahr: d.objectDate || '',
+      image_url: d.primaryImageSmall || d.primaryImage,
+      medium: d.medium || '',
+      department: d.department || ''
+    };
+  } catch(e) { return null; }
+}
+
+// ── Claude Funfacts ───────────────────────────────────
+async function generateFunfacts(work) {
+  const key = getAnthropicKey();
+  if (!key) return 'Kein Anthropic Key gespeichert.';
+  try {
+    const prompt = `Du bist ein Kunstexperte. Schreibe Funfacts über dieses Werk:
+
+Titel: ${work.titel}
+Künstler: ${work.artist}
+Jahr: ${work.jahr}
+Medium: ${work.medium}
+Abteilung: ${work.department}
+
+3-4 kurze Fun Facts auf Deutsch. Keine Nummerierung, keine Emojis, keine Aufzählungszeichen. Fließtext, durch Zeilenumbrüche getrennt. Seriös, lebendig, historisch korrekt — überraschende Details die im Gedächtnis bleiben.`;
+
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 400,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    return data.content?.[0]?.text || '';
+  } catch(e) { return ''; }
+}
+
+// ── Supabase: gesperrte IDs ───────────────────────────
+async function loadBlockedIds() {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${BLOCKED_TABLE}?select=met_id`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    data.forEach(r => blockedIds.add(r.met_id));
+  } catch(e) {}
+}
+
+async function blockId(id) {
+  blockedIds.add(id);
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/${BLOCKED_TABLE}`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json', 'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ met_id: id })
+    });
+  } catch(e) {}
+}
+
+// ── Shuffle Queue ─────────────────────────────────────
+function buildShuffleQueue() {
+  const available = metIds.filter(id => !blockedIds.has(id));
+  const arr = [...available];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function nextId() {
+  if (!shuffleQueue.length) shuffleQueue = buildShuffleQueue();
+  return shuffleQueue.shift();
+}
+
+// ── Prefetch: nächstes Werk vorbereiten ───────────────
+async function prefetchNext() {
+  prefetchDot.classList.add('loading');
+  let work = null;
+  let attempts = 0;
+  while (!work && attempts < 10) {
+    const id = nextId();
+    if (!id) break;
+    work = await fetchMetObject(id);
+    attempts++;
+  }
+  if (!work) { prefetchDot.classList.remove('loading'); return null; }
+
+  // Bild vorladen
+  await new Promise(resolve => {
+    const img = new Image();
+    img.onload = resolve; img.onerror = resolve;
+    img.src = work.image_url;
+  });
+
+  // Funfacts generieren
+  work.funfact = await generateFunfacts(work);
+
+  prefetchDot.classList.remove('loading');
+  return work;
+}
+
+// ── Werk anzeigen ─────────────────────────────────────
+async function showWork(work) {
+  if (!work) return;
+  currentWork = work;
+
+  artImg.src = work.image_url;
+  document.getElementById('d-titel').textContent = work.titel;
+  document.getElementById('d-artist').textContent = [work.artist, work.jahr].filter(Boolean).join(' · ');
+  ffTitel.textContent = work.titel;
+  ffArtist.textContent = [work.artist, work.jahr].filter(Boolean).join(' · ');
+  ffText.textContent = work.funfact || 'Wird geladen…';
+
+  artImg.classList.add('visible');
+  titleBar.classList.add('visible');
+  infoBtn.classList.add('visible');
+  statusBar.textContent = 'AKTIV';
+
+  // Nächstes Werk im Hintergrund vorbereiten
+  prefetchPromise = prefetchNext().then(w => { nextWork = w; });
+
+  if (audioEl && audioUnlocked) {
+    audioEl.currentTime = 0;
+    audioEl.play().catch(() => {});
+    fadeAudio(0, volume, 1500);
+  }
+}
+
+// ── Motion Detection ──────────────────────────────────
+function startMotionDetection() {
+  prevPixels = null;
+  scheduleNext();
+}
+function scheduleNext() {
+  const interval = isDisplaying ? 400 : 150;
+  motionInterval = setTimeout(() => { checkMotion(); scheduleNext(); }, interval);
+}
+function checkMotion() {
+  if (videoFeed.readyState < 2) return;
+  ctx.drawImage(videoFeed, 0, 0, W, H);
+  const pixels = ctx.getImageData(0, 0, W, H).data;
+  if (!prevPixels) { prevPixels = new Uint8ClampedArray(pixels); return; }
+  let diff = 0;
+  for (let i = 0; i < pixels.length; i += 4)
+    diff += Math.abs(pixels[i]-prevPixels[i]) + Math.abs(pixels[i+1]-prevPixels[i+1]) + Math.abs(pixels[i+2]-prevPixels[i+2]);
+  prevPixels = new Uint8ClampedArray(pixels);
+  if (diff / (W*H*3) > sensitivityThreshold) onMotionDetected();
+}
+
+// ── Motion Event ──────────────────────────────────────
+async function onMotionDetected() {
+  if (hideTimer) clearTimeout(hideTimer);
+
+  if (!isDisplaying) {
+    isDisplaying = true;
+
+    // Erstes Werk: nextWork falls schon fertig, sonst warten
+    let work = nextWork;
+    nextWork = null;
+    if (!work) {
+      statusBar.textContent = 'LÄDT…';
+      if (prefetchPromise) work = await prefetchPromise.then(() => nextWork);
+      if (!work) work = await prefetchNext();
+      nextWork = null;
+    }
+    await showWork(work);
+  }
+
+  hideTimer = setTimeout(async () => {
+    artImg.classList.remove('visible');
+    titleBar.classList.remove('visible');
+    infoBtn.classList.remove('visible');
+    funfactOverlay.classList.remove('open');
+    isDisplaying = false;
+    statusBar.textContent = 'WARTEN AUF BEWEGUNG';
+    hideTimer = null;
+    if (audioEl) fadeAudio(volume, 0, 2000, () => { audioEl.pause(); audioEl.currentTime = 0; });
+  }, displayDuration * 1000);
+}
+
+// ── Sperren ───────────────────────────────────────────
+let deleteConfirmTimer = null;
+
+deleteBtn.addEventListener('click', () => {
+  deleteConfirm.style.display = 'block';
+  deleteBtn.style.opacity = '0';
+  if (deleteConfirmTimer) clearTimeout(deleteConfirmTimer);
+  deleteConfirmTimer = setTimeout(() => {
+    deleteConfirm.style.display = 'none';
+    deleteBtn.style.opacity = '';
+  }, 3000);
+});
+
+deleteConfirm.addEventListener('click', async () => {
+  if (deleteConfirmTimer) clearTimeout(deleteConfirmTimer);
+  deleteConfirm.style.display = 'none';
+  deleteBtn.style.opacity = '';
+  if (currentWork) await blockId(currentWork.id);
+  // Sofort nächstes Werk zeigen
+  isDisplaying = false;
+  if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+  artImg.classList.remove('visible');
+  titleBar.classList.remove('visible');
+  infoBtn.classList.remove('visible');
+  funfactOverlay.classList.remove('open');
+  onMotionDetected();
+});
+
+// ── Info / Funfact ────────────────────────────────────
+infoBtn.addEventListener('click', () => funfactOverlay.classList.add('open'));
+backBtn.addEventListener('click', () => funfactOverlay.classList.remove('open'));
+
+// ── Exit ──────────────────────────────────────────────
+exitBtn.addEventListener('click', () => {
+  stopAll();
+  setupScreen.style.display = 'flex';
+  displayScreen.style.display = 'none';
+});
+
+function stopAll() {
+  if (motionInterval) { clearTimeout(motionInterval); motionInterval = null; }
+  if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  if (audioEl) { audioEl.pause(); audioEl.currentTime = 0; }
+  isDisplaying = false; prevPixels = null;
+}
+
+// ── Audio Fade ────────────────────────────────────────
+function fadeAudio(fromVol, toVol, durationMs, onDone) {
+  if (fadeTimer) clearInterval(fadeTimer);
+  const steps = 30, delta = (toVol-fromVol)/steps;
+  let step = 0;
+  audioEl.volume = fromVol;
+  fadeTimer = setInterval(() => {
+    step++;
+    audioEl.volume = Math.min(1, Math.max(0, fromVol + delta*step));
+    if (step >= steps) { clearInterval(fadeTimer); fadeTimer = null; if (onDone) onDone(); }
+  }, durationMs/steps);
+}
+
+// ── Start ─────────────────────────────────────────────
+startBtn.addEventListener('click', async () => {
+  startBtn.disabled = true;
+  startBtn.textContent = 'Lädt…';
+  filterHint.textContent = '';
+
+  // Kamera
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+    videoFeed.srcObject = stream;
+    await new Promise(r => videoFeed.onloadedmetadata = r);
+  } catch(e) {
+    alert('Kamera nicht verfügbar: ' + e.message);
+    startBtn.disabled = false; startBtn.textContent = 'Starten'; return;
+  }
+
+  // Met IDs laden
+  const query = filterInput.value.trim() || 'painting';
+  metIds = await fetchMetIds(query);
+  if (!metIds.length) {
+    alert('Keine Werke gefunden. Anderen Suchbegriff versuchen.');
+    startBtn.disabled = false; startBtn.textContent = 'Starten'; return;
+  }
+  filterHint.textContent = `${metIds.length.toLocaleString()} Werke gefunden`;
+
+  // Gesperrte IDs laden
+  await loadBlockedIds();
+
+  // Shuffle Queue aufbauen
+  shuffleQueue = buildShuffleQueue();
+
+  // Display
+  setupScreen.style.display = 'none';
+  displayScreen.style.display = 'block';
+  startBtn.disabled = false; startBtn.textContent = 'Starten';
+
+  // Erstes Werk vorab im Hintergrund laden
+  statusBar.textContent = 'WARTEN AUF BEWEGUNG';
+  prefetchPromise = prefetchNext().then(w => { nextWork = w; });
+
+  startMotionDetection();
+});
+</script>
+</body>
+</html>
