@@ -162,6 +162,73 @@
   }
   #display-screen:hover #status-bar { opacity: 1; }
 
+  /* ── GALERIE ────────────────────────────────────────── */
+  #gallery-screen {
+    display: none; position: fixed; inset: 0;
+    background: #0a0a0a; overflow-y: auto; padding: 28px 20px 100px;
+  }
+  #gallery-header {
+    display: flex; align-items: center; gap: 16px;
+    margin-bottom: 24px; position: sticky; top: 0;
+    background: #0a0a0a; padding: 0 0 16px; z-index: 10;
+    border-bottom: 1px solid #1a1a1a;
+  }
+  #gallery-header h2 {
+    font-family: 'Cormorant Garamond', serif; font-size: 20px;
+    font-weight: 400; color: #c9a84c; flex: 1;
+  }
+  #gallery-count { font-size: 12px; color: #555; letter-spacing: 0.06em; }
+  #back-to-setup {
+    background: transparent; border: 0.5px solid #333; border-radius: 100px;
+    padding: 8px 18px; color: #666; font-family: 'Jost', sans-serif;
+    font-size: 12px; cursor: pointer; -webkit-appearance: none;
+  }
+  #gallery-start-btn {
+    background: #c9a84c; color: #000; border: none; border-radius: 100px;
+    padding: 10px 28px; font-family: 'Jost', sans-serif;
+    font-size: 13px; font-weight: 500; letter-spacing: 0.06em;
+    cursor: pointer; -webkit-appearance: none; white-space: nowrap;
+  }
+  #gallery-start-btn:disabled { opacity: 0.3; cursor: default; }
+
+  #gallery-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 8px;
+  }
+  .gallery-item {
+    position: relative; aspect-ratio: 1; cursor: pointer;
+    border-radius: 6px; overflow: hidden; background: #111;
+    border: 2px solid transparent; transition: border-color 0.2s;
+  }
+  .gallery-item.selected { border-color: #c9a84c; }
+  .gallery-item img {
+    width: 100%; height: 100%; object-fit: cover;
+    display: block; transition: opacity 0.3s;
+  }
+  .gallery-item .check {
+    position: absolute; top: 6px; right: 6px;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: #c9a84c; color: #000; font-size: 12px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity 0.2s;
+  }
+  .gallery-item.selected .check { opacity: 1; }
+  .gallery-item .img-title {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 16px 6px 6px; font-size: 10px; color: rgba(255,255,255,0.8);
+    background: linear-gradient(transparent, rgba(0,0,0,0.7));
+    opacity: 0; transition: opacity 0.2s; line-height: 1.3;
+  }
+  .gallery-item:hover .img-title { opacity: 1; }
+
+  #load-more-btn {
+    display: none; margin: 24px auto 0; padding: 12px 36px;
+    background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 100px;
+    color: #888; font-family: 'Jost', sans-serif; font-size: 13px;
+    cursor: pointer; -webkit-appearance: none;
+  }
+  #gallery-loading { text-align: center; color: #444; font-size: 13px; padding: 40px; }
+
   /* Ladeindikator für Prefetch */
   #prefetch-dot {
     position: absolute; bottom: 14px; right: 14px;
@@ -201,8 +268,8 @@
              background:none;border:none;color:#444;font-size:16px;cursor:pointer;
              line-height:1;padding:4px;">✕</button>
   </div>
-  <div id="filter-hint" style="font-size:12px;color:#555;text-align:center;max-width:340px;line-height:1.5;margin-top:-8px;min-height:16px;">
-    Standard: painting (Met Museum)
+  <div id="filter-hint" style="font-size:12px;color:#c9a84c;text-align:center;max-width:340px;line-height:1.5;margin-top:-8px;min-height:16px;">
+    Standard: painting — tippe um zu filtern
   </div>
 
   <hr class="divider">
@@ -232,8 +299,21 @@
     <span id="volume-label">70%</span>
   </div>
 
-  <button class="start-btn" id="start-btn">Starten</button>
+  <button class="start-btn" id="search-btn">Suchen</button>
   <p class="hint">Frontkamera erkennt Bewegung. Werke kommen live vom Met Museum New York.</p>
+</div>
+
+<!-- ── GALERIE ───────────────────────────────────────── -->
+<div id="gallery-screen">
+  <div id="gallery-header">
+    <button id="back-to-setup">← Zurück</button>
+    <h2 id="gallery-title">Galerie</h2>
+    <span id="gallery-count"></span>
+    <button id="gallery-start-btn" disabled>Starten</button>
+  </div>
+  <div id="gallery-loading">Lädt…</div>
+  <div id="gallery-grid"></div>
+  <button id="load-more-btn">Mehr laden</button>
 </div>
 
 <!-- ── DISPLAY ───────────────────────────────────────── -->
@@ -275,6 +355,7 @@ const BLOCKED_TABLE = 'met_blocked';
 const MET_BASE = 'https://collectionapi.metmuseum.org/public/collection/v1';
 
 // ── State ─────────────────────────────────────────────
+let activeQuery = '';  // aktueller Suchbegriff für Künstler-Nachfilterung
 let metIds        = [];        // alle IDs aus Met-Suche
 let shuffleQueue  = [];        // gemischte Reihenfolge
 let blockedIds    = new Set(); // gesperrte Met-IDs
@@ -315,8 +396,52 @@ const deleteConfirm = document.getElementById('delete-confirm');
 const prefetchDot   = document.getElementById('prefetch-dot');
 const filterInput   = document.getElementById('filter-input');
 const filterHint    = document.getElementById('filter-hint');
-const startBtn      = document.getElementById('start-btn');
+const searchBtn     = document.getElementById('search-btn');
+const galleryScreen = document.getElementById('gallery-screen');
+const galleryGrid   = document.getElementById('gallery-grid');
+const galleryCount  = document.getElementById('gallery-count');
+const galleryTitle  = document.getElementById('gallery-title');
+const galleryStartBtn = document.getElementById('gallery-start-btn');
+const loadMoreBtn   = document.getElementById('load-more-btn');
+const galleryLoading= document.getElementById('gallery-loading');
+const backToSetup   = document.getElementById('back-to-setup');
 const ctx           = diffCanvas.getContext('2d', { willReadFrequently: true });
+
+// ── Live Filter Vorschau ─────────────────────────────
+let filterTimeout = null;
+filterInput.addEventListener('input', () => {
+  clearTimeout(filterTimeout);
+  const q = filterInput.value.trim();
+  if (!q) {
+    filterHint.style.color = '#555';
+    filterHint.textContent = 'Standard: painting — tippe um zu filtern';
+    return;
+  }
+  filterHint.style.color = '#555';
+  filterHint.textContent = 'Suche…';
+  filterTimeout = setTimeout(async () => {
+    try {
+      // Künstler-Suche
+      const r1 = await fetch(`${MET_BASE}/search?q=${encodeURIComponent(q)}&hasImages=true&artistOrCulture=true`);
+      const d1 = await r1.json();
+      const artistCount = d1.total || 0;
+      // Allgemeine Suche
+      const r2 = await fetch(`${MET_BASE}/search?q=${encodeURIComponent(q)}&hasImages=true`);
+      const d2 = await r2.json();
+      const totalCount = d2.total || 0;
+      if (totalCount > 0) {
+        filterHint.style.color = '#4ade80';
+        filterHint.textContent = `✓ ${totalCount.toLocaleString()} Werke gefunden · App filtert nach Künstler "${q}"`;
+      } else {
+        filterHint.style.color = '#ef4444';
+        filterHint.textContent = `Keine Werke gefunden für "${q}"`;
+      }
+    } catch(e) {
+      filterHint.style.color = '#555';
+      filterHint.textContent = 'Fehler bei der Suche';
+    }
+  }, 600);
+});
 
 // ── Anthropic Key ─────────────────────────────────────
 function getAnthropicKey() { return localStorage.getItem('anthropic_api_key') || ''; }
@@ -366,25 +491,34 @@ document.getElementById('audio-input').addEventListener('change', e => {
 // ── Met Museum API ────────────────────────────────────
 async function fetchMetIds(query) {
   const q = query.trim() || 'painting';
-  filterHint.textContent = `Suche nach "${q}"…`;
   try {
-    // Erst mit Künstler-Filter versuchen
-    const artistUrl = `${MET_BASE}/search?q=${encodeURIComponent(q)}&hasImages=true&artistOrCulture=true`;
-    console.log('Met Künstler-Suche:', artistUrl);
-    const artistRes = await fetch(artistUrl);
-    const artistData = await artistRes.json();
-    console.log('Künstler-Treffer:', artistData.total, artistData.objectIDs?.slice(0,5));
-    if (artistData.objectIDs && artistData.objectIDs.length > 10) {
-      filterHint.textContent = `${artistData.total.toLocaleString()} Werke von "${q}" gefunden`;
-      return artistData.objectIDs;
-    }
-    // Fallback: allgemeine Suche (z.B. für Themen wie "crucifixion")
     const res = await fetch(`${MET_BASE}/search?q=${encodeURIComponent(q)}&hasImages=true`);
     const data = await res.json();
-    console.log('Allgemeine Treffer:', data.total, data.objectIDs?.slice(0,5));
-    filterHint.textContent = `${(data.total||0).toLocaleString()} Werke für "${q}" gefunden`;
     return data.objectIDs || [];
-  } catch(e) { console.error('Met Fehler:', e); return []; }
+  } catch(e) { return []; }
+}
+
+// Prüft ob Werk wirklich zum Suchbegriff passt (Künstler oder Titel)
+function workMatchesQuery(work, query) {
+  if (!query) return true;
+  const q = query.toLowerCase();
+  const artist = (work.artist || '').toLowerCase();
+  const titel = (work.titel || '').toLowerCase();
+  // Alle Wörter des Suchbegriffs müssen im Künstlernamen vorkommen
+  const words = q.split(/\s+/).filter(Boolean);
+  const artistMatch = words.every(w => artist.includes(w));
+  if (artistMatch) return true;
+  // Fallback: Themensuche (alle Wörter im Titel)
+  return words.every(w => titel.includes(w));
+}
+
+// Prüft ob ein Werk wirklich zum Suchbegriff passt (Künstlername)
+function matchesArtistFilter(work, query) {
+  if (!query) return true;
+  const q = query.toLowerCase();
+  const artist = (work.artist || '').toLowerCase();
+  // Wenn Suchwort im Künstlernamen vorkommt → Treffer
+  return artist.includes(q);
 }
 
 async function fetchMetObject(id) {
@@ -485,10 +619,14 @@ async function prefetchNext() {
   prefetchDot.classList.add('loading');
   let work = null;
   let attempts = 0;
-  while (!work && attempts < 10) {
+  while (!work && attempts < 20) {
     const id = nextId();
     if (!id) break;
-    work = await fetchMetObject(id);
+    // Aus Cache holen falls vorhanden (Galerie-Auswahl)
+    const candidate = (window._workCache && window._workCache[id])
+      ? window._workCache[id]
+      : await fetchMetObject(id);
+    if (candidate) work = candidate;
     attempts++;
   }
   if (!work) { prefetchDot.classList.remove('loading'); return null; }
@@ -646,46 +784,114 @@ function fadeAudio(fromVol, toVol, durationMs, onDone) {
   }, durationMs/steps);
 }
 
-// ── Start ─────────────────────────────────────────────
-startBtn.addEventListener('click', async () => {
-  startBtn.disabled = true;
-  startBtn.textContent = 'Lädt…';
-  filterHint.textContent = '';
+// ── Galerie ───────────────────────────────────────────
+let galleryIds    = [];
+let galleryOffset = 0;
+let selectedIds   = new Set();
+let selectedWorks = [];
+const GALLERY_PAGE = 50;
 
-  // Kamera
+async function loadGalleryPage() {
+  if (galleryOffset >= galleryIds.length) { loadMoreBtn.style.display = 'none'; return; }
+  loadMoreBtn.style.display = 'none';
+  galleryLoading.style.display = 'block';
+  galleryLoading.textContent = 'Lädt…';
+
+  let found = 0;
+  const target = GALLERY_PAGE;
+
+  while (found < target && galleryOffset < galleryIds.length) {
+    // Lade nächsten Chunk von 8
+    const chunk = galleryIds.slice(galleryOffset, galleryOffset + 8);
+    galleryOffset += chunk.length;
+    const works = await Promise.all(chunk.map(id => fetchMetObject(id)));
+    works.forEach(w => {
+      if (!w || !w.image_url) return;
+      if (activeQuery && !workMatchesQuery(w, activeQuery)) return;
+      found++;
+      const item = document.createElement('div');
+      item.className = 'gallery-item';
+      item.dataset.id = w.id;
+      item.innerHTML = `<img src="${w.image_url}" loading="lazy" alt="${w.titel}">
+        <div class="check">✓</div>
+        <div class="img-title">${w.titel}${w.artist ? '<br><span style="opacity:0.6">'+w.artist+'</span>' : ''}</div>`;
+      item.addEventListener('click', () => {
+        if (selectedIds.has(w.id)) {
+          selectedIds.delete(w.id); selectedWorks = selectedWorks.filter(x => x.id !== w.id);
+          item.classList.remove('selected');
+        } else {
+          selectedIds.add(w.id); selectedWorks.push(w);
+          item.classList.add('selected');
+        }
+        updateGalleryCount();
+      });
+      galleryGrid.appendChild(item);
+    });
+  }
+
+  galleryLoading.style.display = 'none';
+  loadMoreBtn.style.display = galleryOffset < galleryIds.length ? 'block' : 'none';
+  updateGalleryCount();
+}
+
+function updateGalleryCount() {
+  const sel = selectedIds.size;
+  galleryCount.textContent = sel > 0 ? `${sel} ausgewählt` : `${galleryIds.length.toLocaleString()} gefunden`;
+  galleryStartBtn.disabled = sel === 0;
+}
+
+searchBtn.addEventListener('click', async () => {
+  searchBtn.disabled = true; searchBtn.textContent = 'Sucht…';
+  activeQuery = filterInput.value.trim();
+  const query = activeQuery || 'painting';
+  galleryIds = await fetchMetIds(query);
+  if (!galleryIds.length) {
+    alert('Keine Werke gefunden.');
+    searchBtn.disabled = false; searchBtn.textContent = 'Suchen'; return;
+  }
+  for (let i = galleryIds.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i+1));
+    [galleryIds[i], galleryIds[j]] = [galleryIds[j], galleryIds[i]];
+  }
+  galleryOffset = 0; selectedIds.clear(); selectedWorks = [];
+  galleryGrid.innerHTML = '';
+  galleryLoading.style.display = 'block';
+  galleryLoading.textContent = 'Lädt Vorschaubilder…';
+  loadMoreBtn.style.display = 'none';
+  galleryTitle.textContent = activeQuery || 'Painting';
+  setupScreen.style.display = 'none';
+  galleryScreen.style.display = 'block';
+  searchBtn.disabled = false; searchBtn.textContent = 'Suchen';
+  await loadGalleryPage();
+});
+
+loadMoreBtn.addEventListener('click', loadGalleryPage);
+backToSetup.addEventListener('click', () => { galleryScreen.style.display = 'none'; setupScreen.style.display = 'flex'; });
+
+galleryStartBtn.addEventListener('click', async () => {
+  galleryStartBtn.disabled = true; galleryStartBtn.textContent = 'Startet…';
   try {
     stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
     videoFeed.srcObject = stream;
     await new Promise(r => videoFeed.onloadedmetadata = r);
   } catch(e) {
     alert('Kamera nicht verfügbar: ' + e.message);
-    startBtn.disabled = false; startBtn.textContent = 'Starten'; return;
+    galleryStartBtn.disabled = false; galleryStartBtn.textContent = 'Starten'; return;
   }
-
-  // Met IDs laden
-  const query = filterInput.value.trim() || 'painting';
-  metIds = await fetchMetIds(query);
-  if (!metIds.length) {
-    alert('Keine Werke gefunden. Anderen Suchbegriff versuchen.');
-    startBtn.disabled = false; startBtn.textContent = 'Starten'; return;
-  }
-  filterHint.textContent = `${metIds.length.toLocaleString()} Werke gefunden`;
-
-  // Gesperrte IDs laden
   await loadBlockedIds();
-
-  // Shuffle Queue aufbauen
-  shuffleQueue = buildShuffleQueue();
-
-  // Display
-  setupScreen.style.display = 'none';
+  metIds = selectedWorks.map(w => w.id);
+  shuffleQueue = [...metIds];
+  for (let i = shuffleQueue.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i+1));
+    [shuffleQueue[i], shuffleQueue[j]] = [shuffleQueue[j], shuffleQueue[i]];
+  }
+  window._workCache = {};
+  selectedWorks.forEach(w => { window._workCache[w.id] = w; });
+  galleryScreen.style.display = 'none';
   displayScreen.style.display = 'block';
-  startBtn.disabled = false; startBtn.textContent = 'Starten';
-
-  // Erstes Werk vorab im Hintergrund laden
+  galleryStartBtn.textContent = 'Starten';
   statusBar.textContent = 'WARTEN AUF BEWEGUNG';
   prefetchPromise = prefetchNext().then(w => { nextWork = w; });
-
   startMotionDetection();
 });
 </script>
