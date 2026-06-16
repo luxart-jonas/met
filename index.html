@@ -316,7 +316,7 @@ const prefetchDot   = document.getElementById('prefetch-dot');
 const filterInput   = document.getElementById('filter-input');
 const filterHint    = document.getElementById('filter-hint');
 const startBtn      = document.getElementById('start-btn');
-const ctx           = diffCanvas.getContext('2d');
+const ctx           = diffCanvas.getContext('2d', { willReadFrequently: true });
 
 // ── Anthropic Key ─────────────────────────────────────
 function getAnthropicKey() { return localStorage.getItem('anthropic_api_key') || ''; }
@@ -369,16 +369,22 @@ async function fetchMetIds(query) {
   filterHint.textContent = `Suche nach "${q}"…`;
   try {
     // Erst mit Künstler-Filter versuchen
-    const artistRes = await fetch(`${MET_BASE}/search?q=${encodeURIComponent(q)}&hasImages=true&artistOrCulture=true`);
+    const artistUrl = `${MET_BASE}/search?q=${encodeURIComponent(q)}&hasImages=true&artistOrCulture=true`;
+    console.log('Met Künstler-Suche:', artistUrl);
+    const artistRes = await fetch(artistUrl);
     const artistData = await artistRes.json();
+    console.log('Künstler-Treffer:', artistData.total, artistData.objectIDs?.slice(0,5));
     if (artistData.objectIDs && artistData.objectIDs.length > 10) {
+      filterHint.textContent = `${artistData.total.toLocaleString()} Werke von "${q}" gefunden`;
       return artistData.objectIDs;
     }
     // Fallback: allgemeine Suche (z.B. für Themen wie "crucifixion")
     const res = await fetch(`${MET_BASE}/search?q=${encodeURIComponent(q)}&hasImages=true`);
     const data = await res.json();
+    console.log('Allgemeine Treffer:', data.total, data.objectIDs?.slice(0,5));
+    filterHint.textContent = `${(data.total||0).toLocaleString()} Werke für "${q}" gefunden`;
     return data.objectIDs || [];
-  } catch(e) { return []; }
+  } catch(e) { console.error('Met Fehler:', e); return []; }
 }
 
 async function fetchMetObject(id) {
