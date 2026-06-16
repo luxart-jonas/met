@@ -492,7 +492,7 @@ document.getElementById('audio-input').addEventListener('change', e => {
 async function fetchMetIds(query) {
   const q = query.trim() || 'painting';
   try {
-    const res = await fetch(`${MET_BASE}/search?q=${encodeURIComponent(q)}&hasImages=true`);
+    const res = await fetch(`${MET_BASE}/search?q=${encodeURIComponent(q)}&hasImages=true&artistOrCulture=true`);
     const data = await res.json();
     return data.objectIDs || [];
   } catch(e) { return []; }
@@ -791,46 +791,51 @@ let selectedIds   = new Set();
 let selectedWorks = [];
 const GALLERY_PAGE = 50;
 
+function addWorkToGallery(w) {
+  const item = document.createElement('div');
+  item.className = 'gallery-item';
+  item.dataset.id = w.id;
+  item.innerHTML = `<img src="${w.image_url}" loading="lazy" alt="${w.titel}">
+    <div class="check">✓</div>
+    <div class="img-title">${w.titel}${w.artist ? '<br><span style="opacity:0.6">'+w.artist+'</span>' : ''}</div>`;
+  item.addEventListener('click', () => {
+    if (selectedIds.has(w.id)) {
+      selectedIds.delete(w.id); selectedWorks = selectedWorks.filter(x => x.id !== w.id);
+      item.classList.remove('selected');
+    } else {
+      selectedIds.add(w.id); selectedWorks.push(w);
+      item.classList.add('selected');
+    }
+    updateGalleryCount();
+  });
+  galleryGrid.appendChild(item);
+}
+
 async function loadGalleryPage() {
   if (galleryOffset >= galleryIds.length) { loadMoreBtn.style.display = 'none'; return; }
   loadMoreBtn.style.display = 'none';
   galleryLoading.style.display = 'block';
-  galleryLoading.textContent = 'Lädt…';
 
+  // Alle verbleibenden IDs in 20er-Chunks parallel laden
+  const remaining = galleryIds.slice(galleryOffset);
+  galleryOffset = galleryIds.length; // alles als "verarbeitet" markieren
   let found = 0;
-  const target = GALLERY_PAGE;
 
-  while (found < target && galleryOffset < galleryIds.length) {
-    // Lade nächsten Chunk von 8
-    const chunk = galleryIds.slice(galleryOffset, galleryOffset + 8);
-    galleryOffset += chunk.length;
+  for (let i = 0; i < remaining.length; i += 20) {
+    const chunk = remaining.slice(i, i + 20);
     const works = await Promise.all(chunk.map(id => fetchMetObject(id)));
     works.forEach(w => {
       if (!w || !w.image_url) return;
       if (activeQuery && !workMatchesQuery(w, activeQuery)) return;
       found++;
-      const item = document.createElement('div');
-      item.className = 'gallery-item';
-      item.dataset.id = w.id;
-      item.innerHTML = `<img src="${w.image_url}" loading="lazy" alt="${w.titel}">
-        <div class="check">✓</div>
-        <div class="img-title">${w.titel}${w.artist ? '<br><span style="opacity:0.6">'+w.artist+'</span>' : ''}</div>`;
-      item.addEventListener('click', () => {
-        if (selectedIds.has(w.id)) {
-          selectedIds.delete(w.id); selectedWorks = selectedWorks.filter(x => x.id !== w.id);
-          item.classList.remove('selected');
-        } else {
-          selectedIds.add(w.id); selectedWorks.push(w);
-          item.classList.add('selected');
-        }
-        updateGalleryCount();
-      });
-      galleryGrid.appendChild(item);
+      addWorkToGallery(w);
     });
+    // Ladefortschritt anzeigen
+    galleryLoading.textContent = `Lädt… ${found} gefunden (${Math.min(i+20, remaining.length)}/${remaining.length})`;
   }
 
   galleryLoading.style.display = 'none';
-  loadMoreBtn.style.display = galleryOffset < galleryIds.length ? 'block' : 'none';
+  loadMoreBtn.style.display = 'none';
   updateGalleryCount();
 }
 
