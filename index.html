@@ -4,249 +4,209 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="mobile-web-app-capable" content="yes">
 <title>Met-App</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Jost:wght@300;400;500&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#000; color:#fff; font-family:'Jost',sans-serif; font-weight:300; height:100vh; overflow:hidden; }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: #000; color: #fff; font-family: 'Jost', sans-serif; font-weight: 300; height: 100vh; overflow: hidden; }
-
-  /* ── SETUP ─────────────────────────────────────────── */
+  /* ── SETUP ── */
   #setup-screen {
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    min-height: 100vh; gap: 22px; padding: 40px; background: #0a0a0a; overflow-y: auto;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    min-height:100vh; gap:20px; padding:40px; background:#0a0a0a; overflow-y:auto;
   }
-  #setup-screen h1 {
-    font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 400;
-    color: #c9a84c; letter-spacing: 0.04em;
-  }
-  .section-label {
-    font-size: 11px; letter-spacing: 0.12em; color: #444;
-    text-transform: uppercase; align-self: flex-start; margin-bottom: -10px;
-  }
-  .divider { width: 100%; max-width: 420px; border: none; border-top: 1px solid #1a1a1a; }
+  #setup-screen h1 { font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:400; color:#c9a84c; letter-spacing:0.04em; }
+  .section-label { font-size:11px; letter-spacing:0.12em; color:#444; text-transform:uppercase; align-self:flex-start; margin-bottom:-10px; }
+  .divider { width:100%; max-width:420px; border:none; border-top:1px solid #1a1a1a; }
 
   .upload-zone {
-    border: 1px dashed #333; border-radius: 16px; padding: 22px 40px;
-    text-align: center; cursor: pointer; width: 100%; max-width: 420px;
-    display: block; position: relative; background: #111;
+    border:1px dashed #333; border-radius:16px; padding:20px 40px;
+    text-align:center; cursor:pointer; width:100%; max-width:420px;
+    display:block; position:relative; background:#111;
   }
-  .upload-zone:active { border-color: #666; }
-  .upload-zone p { color: #555; font-size: 13px; margin-top: 5px; }
-  .upload-zone .icon { font-size: 28px; margin-bottom: 5px; }
-  .upload-zone input[type=file] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 16px; }
-  .loaded-ok { font-size: 13px; color: #4ade80; display: none; margin-top: -10px; }
+  .upload-zone p { color:#555; font-size:13px; margin-top:4px; }
+  .upload-zone .icon { font-size:26px; margin-bottom:4px; }
+  .upload-zone input[type=file] { position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; font-size:16px; }
+  .loaded-ok { font-size:13px; color:#4ade80; display:none; margin-top:-10px; }
 
-  .settings-row {
-    display: flex; align-items: center; gap: 12px;
-    color: #888; font-size: 14px; width: 100%; max-width: 420px;
+  /* DB Status Bar */
+  #db-status {
+    width:100%; max-width:420px; background:#111; border:1px solid #222;
+    border-radius:12px; padding:14px 18px; font-size:13px; color:#666;
   }
-  .settings-row label { min-width: 110px; }
-  .settings-row input[type=range] { flex: 1; accent-color: #c9a84c; }
-  .settings-row span { min-width: 60px; color: #fff; font-size: 14px; text-align: right; }
+  #db-status.ready { border-color:#1a3a1a; color:#4ade80; }
+  #db-status.loading { border-color:#3a3a1a; color:#c9a84c; }
+  #db-status.error { border-color:#3a1a1a; color:#ef4444; }
+  #db-progress { height:3px; background:#222; border-radius:2px; margin-top:10px; display:none; }
+  #db-progress-bar { height:100%; background:#c9a84c; border-radius:2px; width:0%; transition:width 0.3s; }
 
-  .key-row { display: flex; gap: 8px; width: 100%; max-width: 420px; }
+  .filter-wrap { width:100%; max-width:420px; position:relative; }
+  .filter-wrap input {
+    width:100%; background:#111; border:1px solid #2a2a2a; border-radius:100px;
+    padding:12px 44px 12px 18px; color:#fff; font-family:'Jost',sans-serif;
+    font-size:14px; font-weight:300; outline:none; -webkit-appearance:none;
+  }
+  .filter-wrap button {
+    position:absolute; right:14px; top:50%; transform:translateY(-50%);
+    background:none; border:none; color:#444; font-size:16px; cursor:pointer; padding:4px;
+  }
+  #filter-hint { font-size:12px; color:#555; text-align:center; max-width:340px; line-height:1.5; min-height:16px; }
+
+  .settings-row { display:flex; align-items:center; gap:12px; color:#888; font-size:14px; width:100%; max-width:420px; }
+  .settings-row label { min-width:110px; }
+  .settings-row input[type=range] { flex:1; accent-color:#c9a84c; }
+  .settings-row span { min-width:60px; color:#fff; font-size:14px; text-align:right; }
+
+  .key-row { display:flex; gap:8px; width:100%; max-width:420px; }
   .key-row input {
-    flex: 1; background: #111; border: 1px solid #2a2a2a; border-radius: 100px;
-    padding: 11px 18px; color: #fff; font-family: 'Jost', sans-serif;
-    font-size: 13px; outline: none; -webkit-appearance: none;
+    flex:1; background:#111; border:1px solid #2a2a2a; border-radius:100px;
+    padding:11px 18px; color:#fff; font-family:'Jost',sans-serif; font-size:13px; outline:none; -webkit-appearance:none;
   }
   .btn-small {
-    background: #1e1e1e; border: 1px solid #333; border-radius: 100px;
-    padding: 10px 18px; color: #aaa; font-family: 'Jost', sans-serif;
-    font-size: 12px; cursor: pointer; white-space: nowrap; -webkit-appearance: none;
+    background:#1e1e1e; border:1px solid #333; border-radius:100px;
+    padding:10px 18px; color:#aaa; font-family:'Jost',sans-serif;
+    font-size:12px; cursor:pointer; white-space:nowrap; -webkit-appearance:none;
   }
-  .key-status { font-size: 12px; color: #4ade80; display: none; margin-top: -10px; align-self: flex-start; }
+  .key-status { font-size:12px; color:#4ade80; display:none; margin-top:-10px; align-self:flex-start; }
 
-  .start-btn {
-    background: #c9a84c; color: #000; border: none; border-radius: 100px;
-    padding: 14px 52px; font-family: 'Jost', sans-serif;
-    font-size: 14px; font-weight: 500; letter-spacing: 0.08em;
-    text-transform: uppercase; cursor: pointer; -webkit-appearance: none; transition: opacity 0.2s;
+  .search-btn {
+    background:#c9a84c; color:#000; border:none; border-radius:100px;
+    padding:14px 52px; font-family:'Jost',sans-serif;
+    font-size:14px; font-weight:500; letter-spacing:0.08em;
+    text-transform:uppercase; cursor:pointer; -webkit-appearance:none; transition:opacity 0.2s;
   }
-  .start-btn:disabled { opacity: 0.3; cursor: default; }
-  .hint { font-size: 12px; color: #333; text-align: center; max-width: 340px; line-height: 1.6; }
+  .search-btn:disabled { opacity:0.3; cursor:default; }
+  .hint { font-size:12px; color:#333; text-align:center; max-width:340px; line-height:1.6; }
 
-  /* ── DISPLAY ────────────────────────────────────────── */
-  #display-screen { display: none; position: fixed; inset: 0; background: #000; user-select: none; }
-
-  #art-img {
-    position: absolute; inset: 0; width: 100%; height: 100%;
-    object-fit: contain; opacity: 0; transition: opacity 0.8s ease;
-  }
-  #art-img.visible { opacity: 1; }
-
-  #title-bar {
-    position: absolute; bottom: 0; left: 0; right: 0;
-    padding: 40px 32px 28px;
-    background: linear-gradient(transparent, rgba(0,0,0,0.75));
-    opacity: 0; transition: opacity 0.8s ease; pointer-events: none;
-  }
-  #title-bar.visible { opacity: 1; }
-  #title-bar .art-titel {
-    font-family: 'Cormorant Garamond', serif; font-style: italic;
-    font-size: 22px; font-weight: 400; color: #fff; margin-bottom: 4px;
-  }
-  #title-bar .art-artist { font-size: 13px; color: rgba(255,255,255,0.6); letter-spacing: 0.06em; }
-
-  #info-btn {
-    position: absolute; bottom: 28px; right: 28px;
-    width: 88px; height: 88px; border-radius: 50%;
-    background: #c0392b; border: none; color: #fff;
-    font-size: 36px; font-weight: 600; cursor: pointer; -webkit-appearance: none;
-    opacity: 0; transition: opacity 0.8s ease;
-    display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 4px 20px rgba(192,57,43,0.6);
-  }
-  #info-btn.visible { opacity: 1; pointer-events: auto; }
-
-  #funfact-overlay {
-    display: none; position: absolute; inset: 0;
-    background: rgba(0,0,0,0.55); align-items: center; justify-content: center;
-    padding: 40px 32px; backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
-  }
-  #funfact-overlay.open { display: flex; }
-  .funfact-box {
-    max-width: 520px; width: 100%;
-    background: rgba(0,0,0,0.55); border-radius: 16px; padding: 28px 32px;
-    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-  }
-  .ff-label { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: #c9a84c; margin-bottom: 16px; }
-  .ff-titel { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 24px; color: #fff; margin-bottom: 6px; }
-  .ff-artist { font-size: 13px; color: rgba(255,255,255,0.5); letter-spacing: 0.06em; margin-bottom: 24px; }
-  .ff-text { font-size: 16px; line-height: 1.75; color: rgba(255,255,255,0.85); white-space: pre-line; }
-  #back-btn {
-    margin-top: 32px; background: transparent;
-    border: 1px solid rgba(255,255,255,0.2); border-radius: 100px;
-    padding: 10px 28px; color: rgba(255,255,255,0.5);
-    font-family: 'Jost', sans-serif; font-size: 12px;
-    letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; -webkit-appearance: none;
-  }
-
-  #video-feed { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
-  canvas#diff-canvas { display: none; }
-
-  #motion-dot { display: none; }
-
-  #delete-btn {
-    position: absolute; top: 14px; left: 14px;
-    background: rgba(255,255,255,0.07); border: 0.5px solid rgba(255,255,255,0.12);
-    border-radius: 100px; padding: 8px 16px; font-size: 12px;
-    color: rgba(255,255,255,0.4); cursor: pointer; -webkit-appearance: none;
-    opacity: 0; transition: opacity 0.3s; letter-spacing: 0.06em;
-  }
-  #display-screen:hover #delete-btn { opacity: 1; }
-  #delete-confirm {
-    display: none; position: absolute; top: 14px; left: 14px;
-    background: rgba(180,30,20,0.85); border: 0.5px solid rgba(255,100,80,0.3);
-    border-radius: 100px; padding: 8px 16px; font-size: 12px;
-    color: rgba(255,255,255,0.9); cursor: pointer; -webkit-appearance: none;
-    letter-spacing: 0.06em; backdrop-filter: blur(4px);
-  }
-  #exit-btn {
-    position: absolute; top: 14px; right: 14px;
-    background: rgba(255,255,255,0.07); border: 0.5px solid rgba(255,255,255,0.12);
-    border-radius: 100px; padding: 8px 16px; font-size: 12px;
-    color: rgba(255,255,255,0.4); cursor: pointer; -webkit-appearance: none;
-    opacity: 0; transition: opacity 0.3s;
-  }
-  #display-screen:hover #exit-btn { opacity: 1; }
-
-  #status-bar {
-    position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%);
-    background: rgba(255,255,255,0.06); border: 0.5px solid rgba(255,255,255,0.1);
-    border-radius: 100px; padding: 7px 18px; font-size: 11px;
-    color: rgba(255,255,255,0.35); letter-spacing: 0.08em; white-space: nowrap;
-    opacity: 0; transition: opacity 0.3s;
-  }
-  #display-screen:hover #status-bar { opacity: 1; }
-
-  /* ── GALERIE ────────────────────────────────────────── */
-  #gallery-screen {
-    display: none; position: fixed; inset: 0;
-    background: #0a0a0a; overflow-y: auto; padding: 28px 20px 100px;
-  }
+  /* ── GALERIE ── */
+  #gallery-screen { display:none; position:fixed; inset:0; background:#0a0a0a; overflow-y:auto; padding:0 0 100px; }
   #gallery-header {
-    display: flex; align-items: center; gap: 16px;
-    margin-bottom: 24px; position: sticky; top: 0;
-    background: #0a0a0a; padding: 0 0 16px; z-index: 10;
-    border-bottom: 1px solid #1a1a1a;
+    display:flex; align-items:center; gap:12px; padding:16px 20px;
+    position:sticky; top:0; background:#0a0a0a; z-index:10;
+    border-bottom:1px solid #1a1a1a;
   }
-  #gallery-header h2 {
-    font-family: 'Cormorant Garamond', serif; font-size: 20px;
-    font-weight: 400; color: #c9a84c; flex: 1;
-  }
-  #gallery-count { font-size: 12px; color: #555; letter-spacing: 0.06em; }
+  #gallery-header h2 { font-family:'Cormorant Garamond',serif; font-size:18px; font-weight:400; color:#c9a84c; flex:1; }
+  #gallery-count { font-size:12px; color:#555; white-space:nowrap; }
   #back-to-setup {
-    background: transparent; border: 0.5px solid #333; border-radius: 100px;
-    padding: 8px 18px; color: #666; font-family: 'Jost', sans-serif;
-    font-size: 12px; cursor: pointer; -webkit-appearance: none;
+    background:transparent; border:0.5px solid #333; border-radius:100px;
+    padding:7px 16px; color:#666; font-family:'Jost',sans-serif; font-size:12px; cursor:pointer; -webkit-appearance:none;
   }
   #gallery-start-btn {
-    background: #c9a84c; color: #000; border: none; border-radius: 100px;
-    padding: 10px 28px; font-family: 'Jost', sans-serif;
-    font-size: 13px; font-weight: 500; letter-spacing: 0.06em;
-    cursor: pointer; -webkit-appearance: none; white-space: nowrap;
+    background:#c9a84c; color:#000; border:none; border-radius:100px;
+    padding:9px 22px; font-family:'Jost',sans-serif; font-size:13px; font-weight:500;
+    cursor:pointer; -webkit-appearance:none; white-space:nowrap;
   }
-  #gallery-start-btn:disabled { opacity: 0.3; cursor: default; }
+  #gallery-start-btn:disabled { opacity:0.3; cursor:default; }
 
-  #gallery-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 8px;
-  }
+  #gallery-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:6px; padding:12px; }
   .gallery-item {
-    position: relative; aspect-ratio: 1; cursor: pointer;
-    border-radius: 6px; overflow: hidden; background: #111;
-    border: 2px solid transparent; transition: border-color 0.2s;
+    position:relative; aspect-ratio:1; cursor:pointer; border-radius:6px;
+    overflow:hidden; background:#111; border:2px solid transparent; transition:border-color 0.15s;
   }
-  .gallery-item.selected { border-color: #c9a84c; }
-  .gallery-item img {
-    width: 100%; height: 100%; object-fit: cover;
-    display: block; transition: opacity 0.3s;
-  }
+  .gallery-item.selected { border-color:#c9a84c; }
+  .gallery-item img { width:100%; height:100%; object-fit:cover; display:block; }
   .gallery-item .check {
-    position: absolute; top: 6px; right: 6px;
-    width: 22px; height: 22px; border-radius: 50%;
-    background: #c9a84c; color: #000; font-size: 12px; font-weight: 700;
-    display: flex; align-items: center; justify-content: center;
-    opacity: 0; transition: opacity 0.2s;
+    position:absolute; top:5px; right:5px; width:20px; height:20px; border-radius:50%;
+    background:#c9a84c; color:#000; font-size:11px; font-weight:700;
+    display:flex; align-items:center; justify-content:center;
+    opacity:0; transition:opacity 0.15s;
   }
-  .gallery-item.selected .check { opacity: 1; }
+  .gallery-item.selected .check { opacity:1; }
   .gallery-item .img-title {
-    position: absolute; bottom: 0; left: 0; right: 0;
-    padding: 16px 6px 6px; font-size: 10px; color: rgba(255,255,255,0.8);
-    background: linear-gradient(transparent, rgba(0,0,0,0.7));
-    opacity: 0; transition: opacity 0.2s; line-height: 1.3;
+    position:absolute; bottom:0; left:0; right:0; padding:14px 5px 5px;
+    font-size:10px; color:rgba(255,255,255,0.85); line-height:1.3;
+    background:linear-gradient(transparent,rgba(0,0,0,0.75));
+    opacity:0; transition:opacity 0.15s;
   }
-  .gallery-item:hover .img-title { opacity: 1; }
+  .gallery-item:hover .img-title { opacity:1; }
+  #gallery-loading { text-align:center; color:#444; font-size:13px; padding:40px 20px; line-height:1.8; }
 
-  #load-more-btn {
-    display: none; margin: 24px auto 0; padding: 12px 36px;
-    background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 100px;
-    color: #888; font-family: 'Jost', sans-serif; font-size: 13px;
-    cursor: pointer; -webkit-appearance: none;
+  /* ── DISPLAY ── */
+  #display-screen { display:none; position:fixed; inset:0; background:#000; user-select:none; }
+  #art-img { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; opacity:0; transition:opacity 0.8s ease; }
+  #art-img.visible { opacity:1; }
+  #title-bar {
+    position:absolute; bottom:0; left:0; right:0; padding:40px 32px 28px;
+    background:linear-gradient(transparent,rgba(0,0,0,0.75));
+    opacity:0; transition:opacity 0.8s ease; pointer-events:none;
   }
-  #gallery-loading { text-align: center; color: #444; font-size: 13px; padding: 40px; }
-
-  /* Ladeindikator für Prefetch */
+  #title-bar.visible { opacity:1; }
+  #title-bar .art-titel { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:22px; color:#fff; margin-bottom:4px; }
+  #title-bar .art-artist { font-size:13px; color:rgba(255,255,255,0.6); letter-spacing:0.06em; }
+  #info-btn {
+    position:absolute; bottom:28px; right:28px; width:88px; height:88px; border-radius:50%;
+    background:#c0392b; border:none; color:#fff; font-size:36px; font-weight:600;
+    cursor:pointer; -webkit-appearance:none; opacity:0; transition:opacity 0.8s ease;
+    display:flex; align-items:center; justify-content:center; box-shadow:0 4px 20px rgba(192,57,43,0.6);
+  }
+  #info-btn.visible { opacity:1; pointer-events:auto; }
+  #funfact-overlay {
+    display:none; position:absolute; inset:0; background:rgba(0,0,0,0.55);
+    align-items:center; justify-content:center; padding:40px 32px;
+    backdrop-filter:blur(2px); -webkit-backdrop-filter:blur(2px);
+  }
+  #funfact-overlay.open { display:flex; }
+  .funfact-box { max-width:520px; width:100%; background:rgba(0,0,0,0.55); border-radius:16px; padding:28px 32px; backdrop-filter:blur(8px); }
+  .ff-label { font-size:10px; letter-spacing:0.15em; text-transform:uppercase; color:#c9a84c; margin-bottom:16px; }
+  .ff-titel { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:24px; color:#fff; margin-bottom:6px; }
+  .ff-artist { font-size:13px; color:rgba(255,255,255,0.5); letter-spacing:0.06em; margin-bottom:24px; }
+  .ff-text { font-size:16px; line-height:1.75; color:rgba(255,255,255,0.85); white-space:pre-line; }
+  #back-btn {
+    margin-top:32px; background:transparent; border:1px solid rgba(255,255,255,0.2); border-radius:100px;
+    padding:10px 28px; color:rgba(255,255,255,0.5); font-family:'Jost',sans-serif;
+    font-size:12px; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer; -webkit-appearance:none;
+  }
+  #video-feed { position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; }
+  canvas#diff-canvas { display:none; }
+  #delete-btn {
+    position:absolute; top:14px; left:14px; background:rgba(255,255,255,0.07);
+    border:0.5px solid rgba(255,255,255,0.12); border-radius:100px; padding:8px 16px;
+    font-size:12px; color:rgba(255,255,255,0.4); cursor:pointer; -webkit-appearance:none;
+    opacity:0; transition:opacity 0.3s; letter-spacing:0.06em;
+  }
+  #display-screen:hover #delete-btn { opacity:1; }
+  #delete-confirm {
+    display:none; position:absolute; top:14px; left:14px;
+    background:rgba(180,30,20,0.85); border:0.5px solid rgba(255,100,80,0.3);
+    border-radius:100px; padding:8px 16px; font-size:12px; color:rgba(255,255,255,0.9);
+    cursor:pointer; -webkit-appearance:none; letter-spacing:0.06em; backdrop-filter:blur(4px);
+  }
+  #exit-btn {
+    position:absolute; top:14px; right:14px; background:rgba(255,255,255,0.07);
+    border:0.5px solid rgba(255,255,255,0.12); border-radius:100px; padding:8px 16px;
+    font-size:12px; color:rgba(255,255,255,0.4); cursor:pointer; -webkit-appearance:none;
+    opacity:0; transition:opacity 0.3s;
+  }
+  #display-screen:hover #exit-btn { opacity:1; }
+  #status-bar {
+    position:absolute; bottom:80px; left:50%; transform:translateX(-50%);
+    background:rgba(255,255,255,0.06); border:0.5px solid rgba(255,255,255,0.1);
+    border-radius:100px; padding:7px 18px; font-size:11px; color:rgba(255,255,255,0.35);
+    letter-spacing:0.08em; white-space:nowrap; opacity:0; transition:opacity 0.3s;
+  }
+  #display-screen:hover #status-bar { opacity:1; }
   #prefetch-dot {
-    position: absolute; bottom: 14px; right: 14px;
-    width: 6px; height: 6px; border-radius: 50%;
-    background: #c9a84c; opacity: 0; transition: opacity 0.3s;
+    position:absolute; bottom:14px; right:14px; width:6px; height:6px;
+    border-radius:50%; background:#c9a84c; opacity:0; transition:opacity 0.3s;
   }
-  #prefetch-dot.loading { opacity: 0.5; animation: pulse 1s infinite; }
-  @keyframes pulse { 0%,100% { opacity: 0.2; } 50% { opacity: 0.7; } }
+  #prefetch-dot.loading { opacity:0.5; animation:pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:0.2}50%{opacity:0.7} }
 </style>
 </head>
 <body>
 
-<!-- ── SETUP ─────────────────────────────────────────── -->
+<!-- SETUP -->
 <div id="setup-screen">
   <h1>Met-App</h1>
 
+  <div id="db-status">
+    <span id="db-status-text">⏳ Kunstwerk-Datenbank wird geprüft…</span>
+    <div id="db-progress"><div id="db-progress-bar"></div></div>
+  </div>
+
   <span class="section-label">Sound (optional)</span>
-  <label class="upload-zone" id="audio-zone">
+  <label class="upload-zone">
     <div class="icon">🔊</div>
     <strong style="font-size:14px">Audio hochladen</strong>
     <p>MP3, WAV — läuft im Loop</p>
@@ -255,34 +215,24 @@
   <div class="loaded-ok" id="audio-loaded">✓ Audio geladen</div>
 
   <hr class="divider">
-  <span class="section-label">Filter (optional)</span>
-  <div style="width:100%;max-width:420px;position:relative;">
-    <input type="text" id="filter-input" placeholder="z.B. crucifixion · Rembrandt · landscape …"
-      style="width:100%;background:#111;border:1px solid #2a2a2a;border-radius:100px;
-             padding:12px 44px 12px 18px;color:#fff;font-family:'Jost',sans-serif;
-             font-size:14px;font-weight:300;outline:none;-webkit-appearance:none;
-             letter-spacing:0.02em;"
+  <span class="section-label">Filter</span>
+  <div class="filter-wrap">
+    <input type="text" id="filter-input" placeholder="z.B. Goya · Rembrandt · crucifixion · landscape …"
       autocomplete="off" autocorrect="off" spellcheck="false">
-    <button onclick="document.getElementById('filter-input').value=''"
-      style="position:absolute;right:14px;top:50%;transform:translateY(-50%);
-             background:none;border:none;color:#444;font-size:16px;cursor:pointer;
-             line-height:1;padding:4px;">✕</button>
+    <button onclick="document.getElementById('filter-input').value='';updateFilterHint()">✕</button>
   </div>
-  <div id="filter-hint" style="font-size:12px;color:#c9a84c;text-align:center;max-width:340px;line-height:1.5;margin-top:-8px;min-height:16px;">
-    Standard: painting — tippe um zu filtern
-  </div>
+  <div id="filter-hint">Erst Datenbank laden, dann filtern</div>
 
   <hr class="divider">
-  <span class="section-label">API Keys</span>
+  <span class="section-label">Anthropic API Key</span>
   <div class="key-row">
-    <input type="password" id="anthropic-key-input" placeholder="Anthropic Key (sk-ant-…)" autocomplete="off" spellcheck="false">
+    <input type="password" id="anthropic-key-input" placeholder="sk-ant-…" autocomplete="off" spellcheck="false">
     <button class="btn-small" onclick="saveAnthropicKey()">Speichern</button>
   </div>
   <div class="key-status" id="anthropic-key-status">✓ Gespeichert</div>
 
   <hr class="divider">
   <span class="section-label">Einstellungen</span>
-
   <div class="settings-row">
     <label>Anzeigedauer</label>
     <input type="range" id="duration-slider" min="30" max="600" step="10" value="180">
@@ -299,11 +249,11 @@
     <span id="volume-label">70%</span>
   </div>
 
-  <button class="start-btn" id="search-btn">Suchen</button>
-  <p class="hint">Frontkamera erkennt Bewegung. Werke kommen live vom Met Museum New York.</p>
+  <button class="search-btn" id="search-btn" disabled>Suchen</button>
+  <p class="hint">Datenbank einmalig laden — danach blitzschnelle Suche offline.</p>
 </div>
 
-<!-- ── GALERIE ───────────────────────────────────────── -->
+<!-- GALERIE -->
 <div id="gallery-screen">
   <div id="gallery-header">
     <button id="back-to-setup">← Zurück</button>
@@ -311,24 +261,20 @@
     <span id="gallery-count"></span>
     <button id="gallery-start-btn" disabled>Starten</button>
   </div>
-  <div id="gallery-loading">Lädt…</div>
+  <div id="gallery-loading"></div>
   <div id="gallery-grid"></div>
-  <button id="load-more-btn">Mehr laden</button>
 </div>
 
-<!-- ── DISPLAY ───────────────────────────────────────── -->
+<!-- DISPLAY -->
 <div id="display-screen">
   <img id="art-img" alt="">
   <video id="video-feed" autoplay muted playsinline></video>
   <canvas id="diff-canvas" width="160" height="120"></canvas>
-
   <div id="title-bar">
     <div class="art-titel" id="d-titel"></div>
     <div class="art-artist" id="d-artist"></div>
   </div>
-
   <button id="info-btn">i</button>
-
   <div id="funfact-overlay">
     <div class="funfact-box">
       <div class="ff-label">Funfact</div>
@@ -338,8 +284,6 @@
       <button id="back-btn">← Zurück</button>
     </div>
   </div>
-
-  <div id="motion-dot"></div>
   <button id="delete-btn">✕ Sperren</button>
   <button id="delete-confirm">Wirklich sperren?</button>
   <div id="status-bar">WARTEN AUF BEWEGUNG</div>
@@ -348,102 +292,64 @@
 </div>
 
 <script>
-// ── Konfiguration ─────────────────────────────────────
+// ── Konfiguration ──────────────────────────────────────
 const SUPABASE_URL = 'https://ormpszktwwiahjooukjk.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ybXBzemt0d3dpYWhqb291a2prIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4NzM5NTAsImV4cCI6MjA5NjQ0OTk1MH0.Jz4rKTlrvRbfdxS1e8fRkwXeD3CJsITeC6Q4lDBjfCc';
 const BLOCKED_TABLE = 'met_blocked';
-const MET_BASE = 'https://collectionapi.metmuseum.org/public/collection/v1';
+const MET_CSV_URL = 'https://media.githubusercontent.com/media/metmuseum/openaccess/master/MetObjects.csv';
+const DB_NAME = 'MetAppDB', DB_VERSION = 1, STORE_NAME = 'objects';
 
-// ── State ─────────────────────────────────────────────
-let activeQuery = '';  // aktueller Suchbegriff für Künstler-Nachfilterung
-let metIds        = [];        // alle IDs aus Met-Suche
-let shuffleQueue  = [];        // gemischte Reihenfolge
-let blockedIds    = new Set(); // gesperrte Met-IDs
-let currentWork   = null;      // aktuell angezeigtes Werk
-let nextWork      = null;      // vorbereitetes nächstes Werk (Prefetch)
-let prefetchPromise = null;    // laufender Prefetch
-let isDisplaying  = false;
-let hideTimer     = null;
-let stream        = null;
-let motionInterval= null;
-let prevPixels    = null;
+// ── State ──────────────────────────────────────────────
+let db           = null;   // IndexedDB
+let allWorks     = [];     // alle Werke aus CSV (gefiltert: nur mit Bild)
+let filteredWorks= [];     // nach Suchbegriff gefiltert
+let selectedWorks= [];     // vom User ausgewählt
+let shuffleQueue = [];
+let currentWork  = null;
+let nextWork     = null;
+let prefetchPromise = null;
+let isDisplaying = false;
+let hideTimer    = null;
+let stream       = null;
+let motionInterval = null;
+let prevPixels   = null;
 let sensitivityThreshold = 10;
 let displayDuration = 180;
-let volume        = 0.7;
-let audioEl       = null;
-let audioUnlocked = false;
-let fadeTimer     = null;
+let volume       = 0.7;
+let audioEl      = null;
+let audioUnlocked= false;
+let fadeTimer    = null;
+let blockedIds   = new Set();
+const W = 160, H = 120;
 
-const W = 160, H = 60;
+// ── DOM ────────────────────────────────────────────────
+const setupScreen    = document.getElementById('setup-screen');
+const galleryScreen  = document.getElementById('gallery-screen');
+const displayScreen  = document.getElementById('display-screen');
+const artImg         = document.getElementById('art-img');
+const titleBar       = document.getElementById('title-bar');
+const infoBtn        = document.getElementById('info-btn');
+const funfactOverlay = document.getElementById('funfact-overlay');
+const ffText         = document.getElementById('ff-text');
+const statusBar      = document.getElementById('status-bar');
+const videoFeed      = document.getElementById('video-feed');
+const diffCanvas     = document.getElementById('diff-canvas');
+const ctx            = diffCanvas.getContext('2d', { willReadFrequently: true });
+const dbStatusEl     = document.getElementById('db-status');
+const dbStatusText   = document.getElementById('db-status-text');
+const dbProgress     = document.getElementById('db-progress');
+const dbProgressBar  = document.getElementById('db-progress-bar');
+const filterInput    = document.getElementById('filter-input');
+const filterHint     = document.getElementById('filter-hint');
+const searchBtn      = document.getElementById('search-btn');
+const galleryGrid    = document.getElementById('gallery-grid');
+const galleryCount   = document.getElementById('gallery-count');
+const galleryTitle   = document.getElementById('gallery-title');
+const galleryStartBtn= document.getElementById('gallery-start-btn');
+const galleryLoading = document.getElementById('gallery-loading');
+const prefetchDot    = document.getElementById('prefetch-dot');
 
-// ── DOM ───────────────────────────────────────────────
-const setupScreen   = document.getElementById('setup-screen');
-const displayScreen = document.getElementById('display-screen');
-const artImg        = document.getElementById('art-img');
-const titleBar      = document.getElementById('title-bar');
-const infoBtn       = document.getElementById('info-btn');
-const funfactOverlay= document.getElementById('funfact-overlay');
-const ffTitel       = document.getElementById('ff-titel');
-const ffArtist      = document.getElementById('ff-artist');
-const ffText        = document.getElementById('ff-text');
-const backBtn       = document.getElementById('back-btn');
-const statusBar     = document.getElementById('status-bar');
-const videoFeed     = document.getElementById('video-feed');
-const diffCanvas    = document.getElementById('diff-canvas');
-const exitBtn       = document.getElementById('exit-btn');
-const deleteBtn     = document.getElementById('delete-btn');
-const deleteConfirm = document.getElementById('delete-confirm');
-const prefetchDot   = document.getElementById('prefetch-dot');
-const filterInput   = document.getElementById('filter-input');
-const filterHint    = document.getElementById('filter-hint');
-const searchBtn     = document.getElementById('search-btn');
-const galleryScreen = document.getElementById('gallery-screen');
-const galleryGrid   = document.getElementById('gallery-grid');
-const galleryCount  = document.getElementById('gallery-count');
-const galleryTitle  = document.getElementById('gallery-title');
-const galleryStartBtn = document.getElementById('gallery-start-btn');
-const loadMoreBtn   = document.getElementById('load-more-btn');
-const galleryLoading= document.getElementById('gallery-loading');
-const backToSetup   = document.getElementById('back-to-setup');
-const ctx           = diffCanvas.getContext('2d', { willReadFrequently: true });
-
-// ── Live Filter Vorschau ─────────────────────────────
-let filterTimeout = null;
-filterInput.addEventListener('input', () => {
-  clearTimeout(filterTimeout);
-  const q = filterInput.value.trim();
-  if (!q) {
-    filterHint.style.color = '#555';
-    filterHint.textContent = 'Standard: painting — tippe um zu filtern';
-    return;
-  }
-  filterHint.style.color = '#555';
-  filterHint.textContent = 'Suche…';
-  filterTimeout = setTimeout(async () => {
-    try {
-      // Künstler-Suche
-      const r1 = await fetch(`${MET_BASE}/search?q=${encodeURIComponent(q)}&hasImages=true&artistOrCulture=true`);
-      const d1 = await r1.json();
-      const artistCount = d1.total || 0;
-      // Allgemeine Suche
-      const r2 = await fetch(`${MET_BASE}/search?q=${encodeURIComponent(q)}&hasImages=true`);
-      const d2 = await r2.json();
-      const totalCount = d2.total || 0;
-      if (totalCount > 0) {
-        filterHint.style.color = '#4ade80';
-        filterHint.textContent = `✓ ${totalCount.toLocaleString()} Werke gefunden · App filtert nach Künstler "${q}"`;
-      } else {
-        filterHint.style.color = '#ef4444';
-        filterHint.textContent = `Keine Werke gefunden für "${q}"`;
-      }
-    } catch(e) {
-      filterHint.style.color = '#555';
-      filterHint.textContent = 'Fehler bei der Suche';
-    }
-  }, 600);
-});
-
-// ── Anthropic Key ─────────────────────────────────────
+// ── Anthropic Key ──────────────────────────────────────
 function getAnthropicKey() { return localStorage.getItem('anthropic_api_key') || ''; }
 function saveAnthropicKey() {
   const val = document.getElementById('anthropic-key-input').value.trim();
@@ -454,125 +360,334 @@ function saveAnthropicKey() {
 }
 if (getAnthropicKey()) document.getElementById('anthropic-key-status').style.display = 'block';
 
-// ── Slider ────────────────────────────────────────────
-const durationSlider   = document.getElementById('duration-slider');
-const durationLabel    = document.getElementById('duration-label');
-const sensitivitySlider= document.getElementById('sensitivity-slider');
-const sensitivityLabel = document.getElementById('sensitivity-label');
-const volumeSlider     = document.getElementById('volume-slider');
-const volumeLabel      = document.getElementById('volume-label');
-
-durationSlider.addEventListener('input', () => {
-  displayDuration = parseInt(durationSlider.value);
+// ── Slider ─────────────────────────────────────────────
+document.getElementById('duration-slider').addEventListener('input', e => {
+  displayDuration = parseInt(e.target.value);
   const m = Math.floor(displayDuration/60), s = displayDuration%60;
-  durationLabel.textContent = `${m}:${s.toString().padStart(2,'0')} min`;
+  document.getElementById('duration-label').textContent = `${m}:${s.toString().padStart(2,'0')} min`;
 });
-sensitivitySlider.addEventListener('input', () => {
-  sensitivityThreshold = parseInt(sensitivitySlider.value);
+document.getElementById('sensitivity-slider').addEventListener('input', e => {
+  sensitivityThreshold = parseInt(e.target.value);
   const map = {2:'Sehr hoch',7:'Hoch',13:'Mittel',20:'Niedrig',30:'Sehr niedrig'};
   const k = Object.keys(map).reduce((a,b) => Math.abs(b-sensitivityThreshold)<Math.abs(a-sensitivityThreshold)?b:a);
-  sensitivityLabel.textContent = map[k];
+  document.getElementById('sensitivity-label').textContent = map[k];
 });
-volumeSlider.addEventListener('input', () => {
-  volume = parseInt(volumeSlider.value) / 100;
-  volumeLabel.textContent = volumeSlider.value + '%';
+document.getElementById('volume-slider').addEventListener('input', e => {
+  volume = parseInt(e.target.value)/100;
+  document.getElementById('volume-label').textContent = e.target.value+'%';
   if (audioEl) audioEl.volume = volume;
 });
 
-// ── Audio ─────────────────────────────────────────────
+// ── Audio ──────────────────────────────────────────────
 document.getElementById('audio-input').addEventListener('change', e => {
   const f = e.target.files[0]; if (!f) return;
   audioEl = new Audio(URL.createObjectURL(f));
   audioEl.loop = true; audioEl.volume = volume;
   document.getElementById('audio-loaded').style.display = 'block';
-  displayScreen.addEventListener('click', () => { if (!audioUnlocked) { audioEl.play().then(() => { audioEl.pause(); audioEl.currentTime = 0; audioUnlocked = true; }).catch(()=>{}); } }, { once: true });
+  displayScreen.addEventListener('click', () => {
+    if (!audioUnlocked) { audioEl.play().then(()=>{audioEl.pause();audioEl.currentTime=0;audioUnlocked=true;}).catch(()=>{}); }
+  }, { once: true });
 });
 
-// ── Met Museum API ────────────────────────────────────
-async function fetchMetIds(query) {
-  const q = query.trim() || 'painting';
-  try {
-    const res = await fetch(`${MET_BASE}/search?q=${encodeURIComponent(q)}&hasImages=true&artistOrCulture=true`);
-    const data = await res.json();
-    return data.objectIDs || [];
-  } catch(e) { return []; }
-}
-
-// Prüft ob Werk wirklich zum Suchbegriff passt (Künstler oder Titel)
-function workMatchesQuery(work, query) {
-  if (!query) return true;
-  const q = query.toLowerCase();
-  const artist = (work.artist || '').toLowerCase();
-  const titel = (work.titel || '').toLowerCase();
-  // Alle Wörter des Suchbegriffs müssen im Künstlernamen vorkommen
-  const words = q.split(/\s+/).filter(Boolean);
-  const artistMatch = words.every(w => artist.includes(w));
-  if (artistMatch) return true;
-  // Fallback: Themensuche (alle Wörter im Titel)
-  return words.every(w => titel.includes(w));
-}
-
-// Prüft ob ein Werk wirklich zum Suchbegriff passt (Künstlername)
-function matchesArtistFilter(work, query) {
-  if (!query) return true;
-  const q = query.toLowerCase();
-  const artist = (work.artist || '').toLowerCase();
-  // Wenn Suchwort im Künstlernamen vorkommt → Treffer
-  return artist.includes(q);
-}
-
-async function fetchMetObject(id) {
-  try {
-    const res = await fetch(`${MET_BASE}/objects/${id}`);
-    const d = await res.json();
-    if (!d.primaryImageSmall && !d.primaryImage) return null;
-    return {
-      id: d.objectID,
-      titel: d.title || '',
-      artist: d.artistDisplayName || '',
-      jahr: d.objectDate || '',
-      image_url: d.primaryImageSmall || d.primaryImage,
-      medium: d.medium || '',
-      department: d.department || ''
+// ── IndexedDB ──────────────────────────────────────────
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = e => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+      }
     };
-  } catch(e) { return null; }
+    req.onsuccess = e => resolve(e.target.result);
+    req.onerror = () => reject(req.error);
+  });
 }
 
-// ── Claude Funfacts ───────────────────────────────────
-async function generateFunfacts(work) {
-  const key = getAnthropicKey();
-  if (!key) return 'Kein Anthropic Key gespeichert.';
-  try {
-    const prompt = `Du bist ein Kunstexperte. Schreibe Funfacts über dieses Werk:
+function dbCount(db) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readonly');
+    const req = tx.objectStore(STORE_NAME).count();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
 
-Titel: ${work.titel}
-Künstler: ${work.artist}
-Jahr: ${work.jahr}
-Medium: ${work.medium}
-Abteilung: ${work.department}
+function dbGetAll(db) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readonly');
+    const req = tx.objectStore(STORE_NAME).getAll();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
 
-3-4 kurze Fun Facts auf Deutsch. Keine Nummerierung, keine Emojis, keine Aufzählungszeichen. Fließtext, durch Zeilenumbrüche getrennt. Seriös, lebendig, historisch korrekt — überraschende Details die im Gedächtnis bleiben.`;
+function dbPutBatch(db, items) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    const store = tx.objectStore(STORE_NAME);
+    items.forEach(item => store.put(item));
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+}
 
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 400,
-        messages: [{ role: 'user', content: prompt }]
-      })
+// ── CSV laden und parsen ───────────────────────────────
+async function loadAndParseCSV() {
+  dbStatusEl.className = 'loading';
+  dbStatusText.textContent = '⬇️ Lade Met Museum Datenbank (ca. 50MB, einmalig)…';
+  dbProgress.style.display = 'block';
+
+  const response = await fetch(MET_CSV_URL);
+  if (!response.ok) throw new Error('CSV nicht erreichbar');
+
+  const reader = response.body.getReader();
+  const contentLength = parseInt(response.headers.get('Content-Length') || '0');
+  let received = 0;
+  const chunks = [];
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    received += value.length;
+    if (contentLength > 0) {
+      dbProgressBar.style.width = Math.round(received/contentLength*100) + '%';
+    }
+    // Status aktualisieren
+    dbStatusText.textContent = `⬇️ ${Math.round(received/1024/1024)}MB geladen…`;
+  }
+
+  dbStatusText.textContent = '⚙️ Verarbeite Daten…';
+  dbProgressBar.style.width = '100%';
+
+  // Uint8Arrays zusammenführen und dekodieren
+  const total = chunks.reduce((sum, c) => sum + c.length, 0);
+  const merged = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) { merged.set(chunk, offset); offset += chunk.length; }
+  const text = new TextDecoder('utf-8').decode(merged);
+
+  // CSV parsen
+  const lines = text.split('\n');
+  const header = lines[0].split(',');
+  const idIdx      = header.indexOf('Object ID');
+  const titleIdx   = header.indexOf('Title');
+  const artistIdx  = header.indexOf('Artist Display Name');
+  const dateIdx    = header.indexOf('Object Date');
+  const imgIdx     = header.indexOf('Link Resource');
+  const mediumIdx  = header.indexOf('Medium');
+  const deptIdx    = header.indexOf('Department');
+
+  const works = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols = parseCSVLine(lines[i]);
+    if (!cols || cols.length < Math.max(idIdx, titleIdx, artistIdx, imgIdx) + 1) continue;
+    const img = cols[imgIdx] || '';
+    if (!img.includes('metmuseum.org')) continue; // nur echte Bild-URLs
+    const id = parseInt(cols[idIdx]);
+    if (!id) continue;
+    works.push({
+      id,
+      titel: cols[titleIdx] || '',
+      artist: cols[artistIdx] || '',
+      jahr: cols[dateIdx] || '',
+      medium: cols[mediumIdx] || '',
+      dept: cols[deptIdx] || '',
+      image_url: img
     });
-    const data = await res.json();
-    return data.content?.[0]?.text || '';
-  } catch(e) { return ''; }
+  }
+  return works;
 }
 
-// ── Supabase: gesperrte IDs ───────────────────────────
+function parseCSVLine(line) {
+  const result = [];
+  let cur = '', inQuote = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') { inQuote = !inQuote; }
+    else if (c === ',' && !inQuote) { result.push(cur.trim()); cur = ''; }
+    else { cur += c; }
+  }
+  result.push(cur.trim());
+  return result;
+}
+
+// ── Datenbank initialisieren ───────────────────────────
+async function initDB() {
+  try {
+    db = await openDB();
+    const count = await dbCount(db);
+
+    if (count > 0) {
+      // Bereits geladen — aus IndexedDB lesen
+      dbStatusText.textContent = `⏳ Lade ${count.toLocaleString()} Werke aus lokalem Speicher…`;
+      allWorks = await dbGetAll(db);
+      dbStatusEl.className = 'ready';
+      dbStatusText.textContent = `✓ ${allWorks.length.toLocaleString()} Werke bereit (lokal gespeichert)`;
+      dbProgress.style.display = 'none';
+      searchBtn.disabled = false;
+      updateFilterHint();
+    } else {
+      // Erstmaliger Download
+      const works = await loadAndParseCSV();
+      dbStatusText.textContent = `⚙️ Speichere ${works.length.toLocaleString()} Werke lokal…`;
+
+      // In Batches speichern
+      const batchSize = 1000;
+      for (let i = 0; i < works.length; i += batchSize) {
+        await dbPutBatch(db, works.slice(i, i + batchSize));
+        dbProgressBar.style.width = Math.round(i/works.length*100) + '%';
+      }
+
+      allWorks = works;
+      dbStatusEl.className = 'ready';
+      dbStatusText.textContent = `✓ ${allWorks.length.toLocaleString()} Werke gespeichert — bereit!`;
+      dbProgress.style.display = 'none';
+      searchBtn.disabled = false;
+      updateFilterHint();
+    }
+  } catch(e) {
+    dbStatusEl.className = 'error';
+    dbStatusText.textContent = '❌ Fehler: ' + e.message;
+    console.error(e);
+  }
+}
+
+// ── Filter ─────────────────────────────────────────────
+function updateFilterHint() {
+  if (!allWorks.length) return;
+  const q = filterInput.value.trim().toLowerCase();
+  if (!q) {
+    filterHint.style.color = '#555';
+    filterHint.textContent = `Alle ${allWorks.length.toLocaleString()} Werke (kein Filter)`;
+    return;
+  }
+  const words = q.split(/\s+/).filter(Boolean);
+  const count = allWorks.filter(w => {
+    const artist = w.artist.toLowerCase();
+    const titel = w.titel.toLowerCase();
+    return words.every(word => artist.includes(word) || titel.includes(word));
+  }).length;
+  filterHint.style.color = count > 0 ? '#4ade80' : '#ef4444';
+  filterHint.textContent = count > 0
+    ? `✓ ${count.toLocaleString()} Werke gefunden für "${filterInput.value.trim()}"`
+    : `Keine Werke gefunden für "${filterInput.value.trim()}"`;
+}
+
+let filterTimeout = null;
+filterInput.addEventListener('input', () => {
+  clearTimeout(filterTimeout);
+  filterTimeout = setTimeout(updateFilterHint, 300);
+});
+
+// ── Galerie ────────────────────────────────────────────
+searchBtn.addEventListener('click', () => {
+  const q = filterInput.value.trim().toLowerCase();
+  const words = q ? q.split(/\s+/).filter(Boolean) : [];
+
+  filteredWorks = words.length
+    ? allWorks.filter(w => {
+        const artist = w.artist.toLowerCase();
+        const titel = w.titel.toLowerCase();
+        return words.every(word => artist.includes(word) || titel.includes(word));
+      })
+    : [...allWorks];
+
+  // Mischen
+  for (let i = filteredWorks.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i+1));
+    [filteredWorks[i], filteredWorks[j]] = [filteredWorks[j], filteredWorks[i]];
+  }
+
+  selectedWorks = [];
+  galleryGrid.innerHTML = '';
+  galleryTitle.textContent = filterInput.value.trim() || 'Alle Werke';
+  galleryCount.textContent = `${filteredWorks.length.toLocaleString()} gefunden`;
+  galleryStartBtn.disabled = true;
+
+  // Erste 50 anzeigen
+  showGalleryBatch(0, 50);
+
+  setupScreen.style.display = 'none';
+  galleryScreen.style.display = 'block';
+});
+
+function showGalleryBatch(from, count) {
+  const batch = filteredWorks.slice(from, from + count);
+  batch.forEach(w => addGalleryItem(w));
+
+  // "Mehr laden" Button
+  const existing = document.getElementById('load-more-btn');
+  if (existing) existing.remove();
+  if (from + count < filteredWorks.length) {
+    const btn = document.createElement('button');
+    btn.id = 'load-more-btn';
+    btn.textContent = `Mehr laden (${filteredWorks.length - from - count} weitere)`;
+    btn.style.cssText = 'display:block;margin:20px auto;padding:12px 36px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:100px;color:#888;font-family:Jost,sans-serif;font-size:13px;cursor:pointer;-webkit-appearance:none;';
+    btn.addEventListener('click', () => { btn.remove(); showGalleryBatch(from + count, count); });
+    galleryScreen.appendChild(btn);
+  }
+}
+
+function addGalleryItem(w) {
+  const item = document.createElement('div');
+  item.className = 'gallery-item';
+  item.innerHTML = `<img src="${w.image_url}" loading="lazy" alt="${w.titel}" onerror="this.parentElement.style.display='none'">
+    <div class="check">✓</div>
+    <div class="img-title">${w.titel}${w.artist ? '<br><span style="opacity:0.6">'+w.artist+'</span>' : ''}</div>`;
+  item.addEventListener('click', () => {
+    const idx = selectedWorks.findIndex(x => x.id === w.id);
+    if (idx >= 0) {
+      selectedWorks.splice(idx, 1);
+      item.classList.remove('selected');
+    } else {
+      selectedWorks.push(w);
+      item.classList.add('selected');
+    }
+    const sel = selectedWorks.length;
+    galleryCount.textContent = sel > 0
+      ? `${sel} ausgewählt · ${filteredWorks.length.toLocaleString()} gefunden`
+      : `${filteredWorks.length.toLocaleString()} gefunden`;
+    galleryStartBtn.disabled = sel === 0;
+  });
+  galleryGrid.appendChild(item);
+}
+
+document.getElementById('back-to-setup').addEventListener('click', () => {
+  galleryScreen.style.display = 'none';
+  setupScreen.style.display = 'flex';
+});
+
+// ── Starten ────────────────────────────────────────────
+galleryStartBtn.addEventListener('click', async () => {
+  galleryStartBtn.disabled = true; galleryStartBtn.textContent = 'Startet…';
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+    videoFeed.srcObject = stream;
+    await new Promise(r => videoFeed.onloadedmetadata = r);
+  } catch(e) {
+    alert('Kamera nicht verfügbar: ' + e.message);
+    galleryStartBtn.disabled = false; galleryStartBtn.textContent = 'Starten'; return;
+  }
+  await loadBlockedIds();
+  shuffleQueue = [...selectedWorks.map(w => w.id)];
+  for (let i = shuffleQueue.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i+1));
+    [shuffleQueue[i], shuffleQueue[j]] = [shuffleQueue[j], shuffleQueue[i]];
+  }
+  // Work-Cache aus selectedWorks
+  window._workCache = {};
+  selectedWorks.forEach(w => { window._workCache[w.id] = w; });
+  galleryScreen.style.display = 'none';
+  displayScreen.style.display = 'block';
+  galleryStartBtn.textContent = 'Starten';
+  statusBar.textContent = 'WARTEN AUF BEWEGUNG';
+  prefetchPromise = prefetchNext().then(w => { nextWork = w; });
+  startMotionDetection();
+});
+
+// ── Supabase: geblockte IDs ────────────────────────────
 async function loadBlockedIds() {
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/${BLOCKED_TABLE}?select=met_id`, {
@@ -584,99 +699,103 @@ async function loadBlockedIds() {
   } catch(e) {}
 }
 
-async function blockId(id) {
+async function blockWork(id) {
   blockedIds.add(id);
   try {
     await fetch(`${SUPABASE_URL}/rest/v1/${BLOCKED_TABLE}`, {
       method: 'POST',
-      headers: {
-        'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`,
-        'Content-Type': 'application/json', 'Prefer': 'return=minimal'
-      },
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
       body: JSON.stringify({ met_id: id })
     });
   } catch(e) {}
 }
 
-// ── Shuffle Queue ─────────────────────────────────────
-function buildShuffleQueue() {
-  const available = metIds.filter(id => !blockedIds.has(id));
-  const arr = [...available];
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
-
-function nextId() {
-  if (!shuffleQueue.length) shuffleQueue = buildShuffleQueue();
-  return shuffleQueue.shift();
-}
-
-// ── Prefetch: nächstes Werk vorbereiten ───────────────
+// ── Prefetch ───────────────────────────────────────────
 async function prefetchNext() {
   prefetchDot.classList.add('loading');
   let work = null;
-  let attempts = 0;
-  while (!work && attempts < 20) {
-    const id = nextId();
-    if (!id) break;
-    // Aus Cache holen falls vorhanden (Galerie-Auswahl)
-    const candidate = (window._workCache && window._workCache[id])
-      ? window._workCache[id]
-      : await fetchMetObject(id);
-    if (candidate) work = candidate;
-    attempts++;
+  while (!work && shuffleQueue.length) {
+    const id = shuffleQueue.shift();
+    if (blockedIds.has(id)) continue;
+    work = window._workCache?.[id] || null;
+    if (!work) {
+      // Aus IndexedDB holen
+      work = await new Promise(resolve => {
+        const tx = db.transaction(STORE_NAME, 'readonly');
+        const req = tx.objectStore(STORE_NAME).get(id);
+        req.onsuccess = () => resolve(req.result || null);
+        req.onerror = () => resolve(null);
+      });
+    }
   }
   if (!work) { prefetchDot.classList.remove('loading'); return null; }
 
   // Bild vorladen
   await new Promise(resolve => {
-    const img = new Image();
-    img.onload = resolve; img.onerror = resolve;
-    img.src = work.image_url;
+    const img = new Image(); img.onload = resolve; img.onerror = resolve; img.src = work.image_url;
   });
 
   // Funfacts generieren
   work.funfact = await generateFunfacts(work);
-
   prefetchDot.classList.remove('loading');
   return work;
 }
 
-// ── Werk anzeigen ─────────────────────────────────────
+// ── Claude Funfacts ────────────────────────────────────
+async function generateFunfacts(work) {
+  const key = getAnthropicKey();
+  if (!key) return '';
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 400,
+        messages: [{ role: 'user', content: `Du bist ein Kunstexperte. Schreibe Funfacts über dieses Werk:\n\nTitel: ${work.titel}\nKünstler: ${work.artist}\nJahr: ${work.jahr}\nMedium: ${work.medium}\n\n3-4 kurze Fun Facts auf Deutsch. Keine Nummerierung, keine Emojis, keine Aufzählungszeichen. Fließtext, durch Zeilenumbrüche getrennt. Seriös, lebendig, historisch korrekt — überraschende Details die im Gedächtnis bleiben.` }]
+      })
+    });
+    const data = await res.json();
+    return data.content?.[0]?.text || '';
+  } catch(e) { return ''; }
+}
+
+// ── Werk anzeigen ──────────────────────────────────────
 async function showWork(work) {
   if (!work) return;
   currentWork = work;
-
   artImg.src = work.image_url;
   document.getElementById('d-titel').textContent = work.titel;
   document.getElementById('d-artist').textContent = [work.artist, work.jahr].filter(Boolean).join(' · ');
-  ffTitel.textContent = work.titel;
-  ffArtist.textContent = [work.artist, work.jahr].filter(Boolean).join(' · ');
-  ffText.textContent = work.funfact || 'Wird geladen…';
-
+  document.getElementById('ff-titel').textContent = work.titel;
+  document.getElementById('ff-artist').textContent = [work.artist, work.jahr].filter(Boolean).join(' · ');
+  ffText.textContent = work.funfact || '…';
   artImg.classList.add('visible');
   titleBar.classList.add('visible');
   infoBtn.classList.add('visible');
   statusBar.textContent = 'AKTIV';
 
-  // Nächstes Werk im Hintergrund vorbereiten
+  // Nächstes vorbereiten
+  if (!shuffleQueue.length) {
+    // Queue leer — neu mischen
+    shuffleQueue = selectedWorks.map(w => w.id).filter(id => !blockedIds.has(id));
+    for (let i = shuffleQueue.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i+1));
+      [shuffleQueue[i], shuffleQueue[j]] = [shuffleQueue[j], shuffleQueue[i]];
+    }
+  }
   prefetchPromise = prefetchNext().then(w => { nextWork = w; });
 
-  if (audioEl && audioUnlocked) {
-    audioEl.currentTime = 0;
-    audioEl.play().catch(() => {});
-    fadeAudio(0, volume, 1500);
-  }
+  if (audioEl && audioUnlocked) { audioEl.currentTime = 0; audioEl.play().catch(()=>{}); fadeAudio(0, volume, 1500); }
 }
 
-// ── Motion Detection ──────────────────────────────────
-function startMotionDetection() {
-  prevPixels = null;
-  scheduleNext();
-}
+// ── Motion Detection ───────────────────────────────────
+function startMotionDetection() { prevPixels = null; scheduleNext(); }
 function scheduleNext() {
   const interval = isDisplaying ? 400 : 150;
   motionInterval = setTimeout(() => { checkMotion(); scheduleNext(); }, interval);
@@ -693,25 +812,18 @@ function checkMotion() {
   if (diff / (W*H*3) > sensitivityThreshold) onMotionDetected();
 }
 
-// ── Motion Event ──────────────────────────────────────
 async function onMotionDetected() {
   if (hideTimer) clearTimeout(hideTimer);
-
   if (!isDisplaying) {
     isDisplaying = true;
-
-    // Erstes Werk: nextWork falls schon fertig, sonst warten
-    let work = nextWork;
-    nextWork = null;
+    let work = nextWork; nextWork = null;
     if (!work) {
       statusBar.textContent = 'LÄDT…';
-      if (prefetchPromise) work = await prefetchPromise.then(() => nextWork);
+      if (prefetchPromise) { await prefetchPromise; work = nextWork; nextWork = null; }
       if (!work) work = await prefetchNext();
-      nextWork = null;
     }
     await showWork(work);
   }
-
   hideTimer = setTimeout(async () => {
     artImg.classList.remove('visible');
     titleBar.classList.remove('visible');
@@ -724,25 +836,22 @@ async function onMotionDetected() {
   }, displayDuration * 1000);
 }
 
-// ── Sperren ───────────────────────────────────────────
+// ── Sperren ────────────────────────────────────────────
 let deleteConfirmTimer = null;
-
-deleteBtn.addEventListener('click', () => {
-  deleteConfirm.style.display = 'block';
-  deleteBtn.style.opacity = '0';
+document.getElementById('delete-btn').addEventListener('click', () => {
+  document.getElementById('delete-confirm').style.display = 'block';
+  document.getElementById('delete-btn').style.opacity = '0';
   if (deleteConfirmTimer) clearTimeout(deleteConfirmTimer);
   deleteConfirmTimer = setTimeout(() => {
-    deleteConfirm.style.display = 'none';
-    deleteBtn.style.opacity = '';
+    document.getElementById('delete-confirm').style.display = 'none';
+    document.getElementById('delete-btn').style.opacity = '';
   }, 3000);
 });
-
-deleteConfirm.addEventListener('click', async () => {
+document.getElementById('delete-confirm').addEventListener('click', async () => {
   if (deleteConfirmTimer) clearTimeout(deleteConfirmTimer);
-  deleteConfirm.style.display = 'none';
-  deleteBtn.style.opacity = '';
-  if (currentWork) await blockId(currentWork.id);
-  // Sofort nächstes Werk zeigen
+  document.getElementById('delete-confirm').style.display = 'none';
+  document.getElementById('delete-btn').style.opacity = '';
+  if (currentWork) await blockWork(currentWork.id);
   isDisplaying = false;
   if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
   artImg.classList.remove('visible');
@@ -752,153 +861,34 @@ deleteConfirm.addEventListener('click', async () => {
   onMotionDetected();
 });
 
-// ── Info / Funfact ────────────────────────────────────
+// ── Info ───────────────────────────────────────────────
 infoBtn.addEventListener('click', () => funfactOverlay.classList.add('open'));
-backBtn.addEventListener('click', () => funfactOverlay.classList.remove('open'));
+document.getElementById('back-btn').addEventListener('click', () => funfactOverlay.classList.remove('open'));
 
-// ── Exit ──────────────────────────────────────────────
-exitBtn.addEventListener('click', () => {
-  stopAll();
-  setupScreen.style.display = 'flex';
-  displayScreen.style.display = 'none';
-});
-
-function stopAll() {
+// ── Exit ───────────────────────────────────────────────
+document.getElementById('exit-btn').addEventListener('click', () => {
   if (motionInterval) { clearTimeout(motionInterval); motionInterval = null; }
   if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
   if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
   if (audioEl) { audioEl.pause(); audioEl.currentTime = 0; }
   isDisplaying = false; prevPixels = null;
-}
+  displayScreen.style.display = 'none';
+  setupScreen.style.display = 'flex';
+});
 
-// ── Audio Fade ────────────────────────────────────────
-function fadeAudio(fromVol, toVol, durationMs, onDone) {
+// ── Audio Fade ─────────────────────────────────────────
+function fadeAudio(from, to, dur, onDone) {
   if (fadeTimer) clearInterval(fadeTimer);
-  const steps = 30, delta = (toVol-fromVol)/steps;
-  let step = 0;
-  audioEl.volume = fromVol;
+  const steps = 30, delta = (to-from)/steps; let step = 0;
+  audioEl.volume = from;
   fadeTimer = setInterval(() => {
-    step++;
-    audioEl.volume = Math.min(1, Math.max(0, fromVol + delta*step));
+    step++; audioEl.volume = Math.min(1, Math.max(0, from + delta*step));
     if (step >= steps) { clearInterval(fadeTimer); fadeTimer = null; if (onDone) onDone(); }
-  }, durationMs/steps);
+  }, dur/steps);
 }
 
-// ── Galerie ───────────────────────────────────────────
-let galleryIds    = [];
-let galleryOffset = 0;
-let selectedIds   = new Set();
-let selectedWorks = [];
-const GALLERY_PAGE = 50;
-
-function addWorkToGallery(w) {
-  const item = document.createElement('div');
-  item.className = 'gallery-item';
-  item.dataset.id = w.id;
-  item.innerHTML = `<img src="${w.image_url}" loading="lazy" alt="${w.titel}">
-    <div class="check">✓</div>
-    <div class="img-title">${w.titel}${w.artist ? '<br><span style="opacity:0.6">'+w.artist+'</span>' : ''}</div>`;
-  item.addEventListener('click', () => {
-    if (selectedIds.has(w.id)) {
-      selectedIds.delete(w.id); selectedWorks = selectedWorks.filter(x => x.id !== w.id);
-      item.classList.remove('selected');
-    } else {
-      selectedIds.add(w.id); selectedWorks.push(w);
-      item.classList.add('selected');
-    }
-    updateGalleryCount();
-  });
-  galleryGrid.appendChild(item);
-}
-
-async function loadGalleryPage() {
-  if (galleryOffset >= galleryIds.length) { loadMoreBtn.style.display = 'none'; return; }
-  loadMoreBtn.style.display = 'none';
-  galleryLoading.style.display = 'block';
-
-  // Alle verbleibenden IDs in 20er-Chunks parallel laden
-  const remaining = galleryIds.slice(galleryOffset);
-  galleryOffset = galleryIds.length; // alles als "verarbeitet" markieren
-  let found = 0;
-
-  for (let i = 0; i < remaining.length; i += 20) {
-    const chunk = remaining.slice(i, i + 20);
-    const works = await Promise.all(chunk.map(id => fetchMetObject(id)));
-    works.forEach(w => {
-      if (!w || !w.image_url) return;
-      if (activeQuery && !workMatchesQuery(w, activeQuery)) return;
-      found++;
-      addWorkToGallery(w);
-    });
-    // Ladefortschritt anzeigen
-    galleryLoading.textContent = `Lädt… ${found} gefunden (${Math.min(i+20, remaining.length)}/${remaining.length})`;
-  }
-
-  galleryLoading.style.display = 'none';
-  loadMoreBtn.style.display = 'none';
-  updateGalleryCount();
-}
-
-function updateGalleryCount() {
-  const sel = selectedIds.size;
-  galleryCount.textContent = sel > 0 ? `${sel} ausgewählt` : `${galleryIds.length.toLocaleString()} gefunden`;
-  galleryStartBtn.disabled = sel === 0;
-}
-
-searchBtn.addEventListener('click', async () => {
-  searchBtn.disabled = true; searchBtn.textContent = 'Sucht…';
-  activeQuery = filterInput.value.trim();
-  const query = activeQuery || 'painting';
-  galleryIds = await fetchMetIds(query);
-  if (!galleryIds.length) {
-    alert('Keine Werke gefunden.');
-    searchBtn.disabled = false; searchBtn.textContent = 'Suchen'; return;
-  }
-  for (let i = galleryIds.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i+1));
-    [galleryIds[i], galleryIds[j]] = [galleryIds[j], galleryIds[i]];
-  }
-  galleryOffset = 0; selectedIds.clear(); selectedWorks = [];
-  galleryGrid.innerHTML = '';
-  galleryLoading.style.display = 'block';
-  galleryLoading.textContent = 'Lädt Vorschaubilder…';
-  loadMoreBtn.style.display = 'none';
-  galleryTitle.textContent = activeQuery || 'Painting';
-  setupScreen.style.display = 'none';
-  galleryScreen.style.display = 'block';
-  searchBtn.disabled = false; searchBtn.textContent = 'Suchen';
-  await loadGalleryPage();
-});
-
-loadMoreBtn.addEventListener('click', loadGalleryPage);
-backToSetup.addEventListener('click', () => { galleryScreen.style.display = 'none'; setupScreen.style.display = 'flex'; });
-
-galleryStartBtn.addEventListener('click', async () => {
-  galleryStartBtn.disabled = true; galleryStartBtn.textContent = 'Startet…';
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
-    videoFeed.srcObject = stream;
-    await new Promise(r => videoFeed.onloadedmetadata = r);
-  } catch(e) {
-    alert('Kamera nicht verfügbar: ' + e.message);
-    galleryStartBtn.disabled = false; galleryStartBtn.textContent = 'Starten'; return;
-  }
-  await loadBlockedIds();
-  metIds = selectedWorks.map(w => w.id);
-  shuffleQueue = [...metIds];
-  for (let i = shuffleQueue.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i+1));
-    [shuffleQueue[i], shuffleQueue[j]] = [shuffleQueue[j], shuffleQueue[i]];
-  }
-  window._workCache = {};
-  selectedWorks.forEach(w => { window._workCache[w.id] = w; });
-  galleryScreen.style.display = 'none';
-  displayScreen.style.display = 'block';
-  galleryStartBtn.textContent = 'Starten';
-  statusBar.textContent = 'WARTEN AUF BEWEGUNG';
-  prefetchPromise = prefetchNext().then(w => { nextWork = w; });
-  startMotionDetection();
-});
+// ── Start ──────────────────────────────────────────────
+initDB();
 </script>
 </body>
 </html>
