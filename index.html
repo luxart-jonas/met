@@ -111,11 +111,11 @@ body{background:#000;color:#fff;font-family:'Jost',sans-serif;font-weight:300;he
 #display-screen.active{display:block;}
 #art-img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:0;transition:opacity 0.8s ease;}
 #art-img.visible{opacity:1;}
-#title-bar{position:absolute;bottom:0;left:0;right:280px;padding:32px 32px 24px;background:linear-gradient(transparent,rgba(0,0,0,0.55));opacity:0;transition:opacity 0.8s ease;pointer-events:none;}
-#title-bar.visible{opacity:1;}
+#title-bar{position:absolute;bottom:0;left:0;right:0;padding:32px 32px 100px 32px;background:linear-gradient(transparent,rgba(0,0,0,0.55));opacity:0;transition:opacity 0.8s ease;pointer-events:none;}
+#title-bar.visible{opacity:1;pointer-events:auto;}
 .art-artist{font-family:'Jost',sans-serif;font-weight:300;font-size:12px;color:rgba(255,255,255,0.45);letter-spacing:0.08em;margin-bottom:4px;}
 .art-titel{font-family:'Jost',sans-serif;font-weight:300;font-size:15px;color:rgba(255,255,255,0.7);letter-spacing:0.03em;}
-#info-btn{position:absolute;bottom:28px;right:28px;width:88px;height:88px;border-radius:50%;background:#c0392b;border:none;color:#fff;font-size:36px;font-weight:600;cursor:pointer;-webkit-appearance:none;opacity:0;transition:opacity 0.8s ease;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(192,57,43,0.6);}
+#info-btn{position:absolute;bottom:28px;right:28px;width:88px;height:88px;border-radius:50%;background:#c0392b;border:none;color:#fff;font-size:36px;font-weight:600;cursor:pointer;-webkit-appearance:none;opacity:0;transition:opacity 0.8s ease;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(192,57,43,0.6);z-index:5;}
 #info-btn.visible{opacity:1;pointer-events:auto;}
 #funfact-overlay{display:none;position:absolute;inset:0;background:rgba(0,0,0,0.55);align-items:center;justify-content:center;padding:40px 32px;backdrop-filter:blur(2px);}
 #funfact-overlay.open{display:flex;}
@@ -135,6 +135,16 @@ canvas{display:none;}
 #status-bar{position:absolute;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.1);border-radius:100px;padding:7px 18px;font-size:11px;color:rgba(255,255,255,0.35);letter-spacing:0.08em;white-space:nowrap;opacity:0;transition:opacity 0.3s;}
 #display-screen:hover #status-bar{opacity:1;}
 #prefetch-dot{position:absolute;bottom:14px;right:14px;width:6px;height:6px;border-radius:50%;background:#c9a84c;opacity:0;}
+#skip-btn{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,0.08);border:0.5px solid rgba(255,255,255,0.15);border-radius:100px;padding:10px 28px;font-size:13px;color:rgba(255,255,255,0.5);cursor:pointer;-webkit-appearance:none;opacity:0;transition:opacity 0.3s;letter-spacing:0.05em;}
+#display-screen:hover #skip-btn{opacity:1;}
+/* Inline-Edit Overlay */
+#inline-edit-overlay{display:none;position:absolute;inset:0;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;padding:40px;backdrop-filter:blur(4px);}
+#inline-edit-overlay.open{display:flex;}
+.inline-edit-box{background:#1a1a1a;border-radius:16px;padding:28px;width:100%;max-width:500px;display:flex;flex-direction:column;gap:16px;}
+.inline-edit-box h3{font-family:'Cormorant Garamond',serif;font-size:18px;color:#c9a84c;font-weight:400;}
+.inline-edit-label{font-size:10px;color:#444;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;}
+.inline-edit-input{width:100%;background:#0a0a0a;border:1px solid #2a2a2a;border-radius:8px;padding:10px 12px;color:#e8e0d0;font-family:'Jost',sans-serif;font-size:14px;outline:none;-webkit-appearance:none;resize:none;}
+.inline-edit-actions{display:flex;gap:10px;justify-content:flex-end;}
 #prefetch-dot.loading{opacity:0.5;animation:pulse 1s infinite;}
 @keyframes pulse{0%,100%{opacity:0.2}50%{opacity:0.7}}
 </style>
@@ -199,7 +209,7 @@ canvas{display:none;}
     <button class="btn-back" id="gallery-back-btn">← Zurück</button>
     <h2 id="gallery-title">Galerie</h2>
     <span id="gallery-count" style="font-size:12px;color:#555;white-space:nowrap;"></span>
-    <button class="btn-gold" id="gallery-preview-btn" disabled>Kuratieren →</button>
+    <button class="btn-gold" id="gallery-preview-btn" disabled>Zur Sammlung hinzufügen</button>
   </div>
   <div style="padding:12px 12px 0;">
     <div class="filter-wrap">
@@ -236,7 +246,8 @@ canvas{display:none;}
   <div class="top-bar">
     <button class="btn-back" id="edit-back-btn">← Zurück</button>
     <h2 id="edit-title">Sammlung</h2>
-    <button class="btn-ghost" id="edit-play-btn">▶ Abspielen</button>
+    <button class="btn-ghost" id="edit-preview-btn">⏩ Durchblättern</button>
+    <button class="btn-gold" id="edit-play-btn">▶ Abspielen</button>
   </div>
   <div id="edit-list"></div>
   <div style="padding:20px;text-align:center;">
@@ -252,7 +263,10 @@ canvas{display:none;}
   <canvas id="diff-canvas" width="160" height="120"></canvas>
   <div id="title-bar">
     <div class="art-artist" id="d-artist"></div>
-    <div class="art-titel" id="d-titel"></div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="art-titel" id="d-titel"></div>
+      <button id="edit-display-btn" title="Bearbeiten" style="background:rgba(255,255,255,0.1);border:0.5px solid rgba(255,255,255,0.2);border-radius:50%;width:28px;height:28px;color:rgba(255,255,255,0.6);font-size:13px;cursor:pointer;-webkit-appearance:none;display:flex;align-items:center;justify-content:center;flex-shrink:0;">✎</button>
+    </div>
   </div>
   <button id="info-btn">i</button>
   <div id="funfact-overlay">
@@ -268,6 +282,30 @@ canvas{display:none;}
   <button id="delete-confirm">Wirklich entfernen?</button>
   <div id="status-bar">WARTEN AUF BEWEGUNG</div>
   <div id="prefetch-dot"></div>
+  <button id="skip-btn">› Nächstes</button>
+  <div id="inline-edit-overlay">
+    <div class="inline-edit-box">
+      <h3>Bearbeiten</h3>
+      <div style="display:flex;gap:10px;">
+        <div style="flex:2"><div class="inline-edit-label">Titel</div>
+          <input class="inline-edit-input" id="ie-titel" type="text" placeholder="Titel…">
+        </div>
+        <div style="flex:1"><div class="inline-edit-label">Künstler</div>
+          <input class="inline-edit-input" id="ie-artist" type="text" placeholder="Künstler…">
+        </div>
+        <div style="flex:0 0 80px"><div class="inline-edit-label">Jahr</div>
+          <input class="inline-edit-input" id="ie-jahr" type="text" placeholder="Jahr…">
+        </div>
+      </div>
+      <div><div class="inline-edit-label">Funfact</div>
+        <textarea class="inline-edit-input" id="ie-funfact" rows="4" placeholder="Funfact…"></textarea>
+      </div>
+      <div class="inline-edit-actions">
+        <button class="btn-ghost" id="ie-cancel">Abbrechen</button>
+        <button class="btn-gold" id="ie-save">Speichern</button>
+      </div>
+    </div>
+  </div>
   <button id="exit-btn">✕ Beenden</button>
 </div>
 
@@ -431,7 +469,7 @@ function renderEditList() {
       <img class="edit-thumb" src="${item.image_url}" alt="">
       <div class="edit-meta">
         <div class="edit-artist">${item.artist || ''} ${item.jahr ? '· '+item.jahr : ''}</div>
-        <div style="font-size:13px;color:#e8e0d0;margin-top:4px">${item.titel || ''}</div>
+        <div style="font-size:13px;color:#e8e0d0;margin-top:4px" class="edit-item-title">${item.titel || ''}</div>
       </div>
       <button class="edit-remove" onclick="removeFromCollection(${item.id}, this)">✕</button>
     </div>
@@ -462,6 +500,18 @@ async function updateItem(itemId, field, value) {
 }
 
 document.getElementById('edit-back-btn').addEventListener('click', () => showScreen('collections-screen'));
+document.getElementById('edit-preview-btn').addEventListener('click', () => {
+  if (!activeCollectionItems.length) { alert('Sammlung ist leer.'); return; }
+  // Öffne Preview mit den gespeicherten Items
+  searchResults = activeCollectionItems.map(i => ({
+    id: i.id, image_url: i.image_url, full_url: i.full_url||i.image_url,
+    titel: i.titel, artist: i.artist, jahr: i.jahr, funfact: i.funfact, _dbId: i.id
+  }));
+  openPreview(0);
+  document.getElementById('preview-back').onclick = () => showScreen('edit-screen');
+  // In Preview-Modus: kein "Zur Sammlung" Button — stattdessen nur anzeigen
+  document.getElementById('preview-add-btn').style.display = 'none';
+});
 document.getElementById('edit-play-btn').addEventListener('click', () => startCollection(activeCollectionId, activeCollectionName));
 document.getElementById('edit-add-more-btn').addEventListener('click', openGalleryForCollection);
 document.getElementById('edit-delete-coll-btn').addEventListener('click', async () => {
@@ -568,16 +618,52 @@ function addGalleryItem(w) {
   item.addEventListener('mouseleave', () => { clearTimeout(zoomTimer); zoomOverlay.style.display='none'; });
   item.addEventListener('click', () => {
     zoomOverlay.style.display='none';
-    const idx = searchResults.findIndex(x=>x.id===w.id);
-    if (idx<0) return;
-    // Öffne Preview-Modus ab diesem Bild
-    openPreview(idx);
+    w._selected = !w._selected;
+    item.classList.toggle('selected', w._selected);
+    const selCount = searchResults.filter(x=>x._selected).length;
+    const previewBtn = document.getElementById('gallery-preview-btn');
+    previewBtn.disabled = selCount === 0;
+    previewBtn.textContent = selCount > 0 ? `Zur Sammlung hinzufügen (${selCount})` : 'Zur Sammlung hinzufügen';
+    document.getElementById('gallery-count').textContent = `${searchResults.length} gefunden · ${selCount} ausgewählt`;
   });
   document.getElementById('gallery-grid').appendChild(item);
 }
 
-// Galerie-Preview Button
-document.getElementById('gallery-preview-btn').addEventListener('click', () => openPreview(0));
+// Galerie → Zur Sammlung hinzufügen
+document.getElementById('gallery-preview-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('gallery-preview-btn');
+  const selected = searchResults.filter(w => w._selected);
+  if (!selected.length) return;
+  btn.disabled = true; btn.textContent = `Speichert ${selected.length} Werke…`;
+
+  for (let i = 0; i < selected.length; i++) {
+    const w = selected[i];
+    btn.textContent = `${i+1} / ${selected.length} wird analysiert…`;
+    // Claude für Titel + Funfact
+    const r = await generateFunfactsAndTitle(w);
+    const item = {
+      collection_id: activeCollectionId,
+      image_url: w.image_url,
+      full_url: w.full_url || w.image_url,
+      titel: r.cleanedTitle || w.titel || '',
+      artist: r.cleanedArtist || w.artist || '',
+      jahr: w.jahr || '',
+      funfact: r.funfact || '',
+      position: activeCollectionItems.length + i
+    };
+    const res = await fetch(`${SB_URL}/rest/v1/collection_items`, {
+      method:'POST', headers:{...sbHeaders,'Prefer':'return=representation'},
+      body: JSON.stringify(item)
+    });
+    const [saved] = await res.json();
+    activeCollectionItems.push(saved);
+  }
+
+  btn.textContent = '✓ Gespeichert!';
+  setTimeout(() => {
+    openEditScreen(activeCollectionId, activeCollectionName);
+  }, 800);
+});
 
 // ── Preview Modus ──────────────────────────────────────
 function openPreview(startIdx) {
@@ -639,7 +725,10 @@ function showPreviewItem(idx) {
 
 document.getElementById('preview-prev').addEventListener('click', () => showPreviewItem(previewIndex-1));
 document.getElementById('preview-next').addEventListener('click', () => showPreviewItem(previewIndex+1));
-document.getElementById('preview-back').addEventListener('click', () => showScreen('gallery-screen'));
+document.getElementById('preview-back').addEventListener('click', () => {
+  document.getElementById('preview-add-btn').style.display = '';
+  showScreen('gallery-screen');
+});
 
 document.getElementById('preview-add-btn').addEventListener('click', async () => {
   const w = searchResults[previewIndex];
@@ -887,6 +976,54 @@ document.getElementById('delete-confirm').addEventListener('click',async()=>{
 });
 
 // ── Info / Exit ────────────────────────────────────────
+// ── Skip ──────────────────────────────────────────────
+document.getElementById('skip-btn').addEventListener('click', async () => {
+  if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+  document.getElementById('art-img').classList.remove('visible');
+  document.getElementById('title-bar').classList.remove('visible');
+  document.getElementById('info-btn').classList.remove('visible');
+  document.getElementById('funfact-overlay').classList.remove('open');
+  isDisplaying = false;
+  if (audioEl) fadeAudio(volume, 0, 500, () => { audioEl.pause(); audioEl.currentTime = 0; });
+  await onMotionDetected();
+});
+
+// ── Inline Edit ────────────────────────────────────────
+document.getElementById('edit-display-btn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (!currentWork) return;
+  document.getElementById('ie-titel').value = currentWork.titel || '';
+  document.getElementById('ie-artist').value = currentWork.artist || '';
+  document.getElementById('ie-jahr').value = currentWork.jahr || '';
+  document.getElementById('ie-funfact').value = currentWork.funfact || '';
+  document.getElementById('inline-edit-overlay').classList.add('open');
+});
+document.getElementById('ie-cancel').addEventListener('click', () => {
+  document.getElementById('inline-edit-overlay').classList.remove('open');
+});
+document.getElementById('ie-save').addEventListener('click', async () => {
+  const titel = document.getElementById('ie-titel').value.trim();
+  const artist = document.getElementById('ie-artist').value.trim();
+  const jahr = document.getElementById('ie-jahr').value.trim();
+  const funfact = document.getElementById('ie-funfact').value.trim();
+  currentWork.titel = titel;
+  currentWork.artist = artist;
+  currentWork.jahr = jahr;
+  currentWork.funfact = funfact;
+  document.getElementById('d-titel').textContent = titel;
+  document.getElementById('d-artist').textContent = [artist,jahr].filter(Boolean).join('  ·  ');
+  document.getElementById('ff-titel').textContent = titel;
+  document.getElementById('ff-artist').textContent = [artist,jahr].filter(Boolean).join(' · ');
+  document.getElementById('ff-text').textContent = funfact || '…';
+  if (currentWork.id) {
+    await fetch(`${SB_URL}/rest/v1/collection_items?id=eq.${currentWork.id}`, {
+      method:'PATCH', headers: sbHeaders,
+      body: JSON.stringify({ titel, artist, jahr, funfact })
+    });
+  }
+  document.getElementById('inline-edit-overlay').classList.remove('open');
+});
+
 document.getElementById('info-btn').addEventListener('click',()=>document.getElementById('funfact-overlay').classList.add('open'));
 document.getElementById('back-btn').addEventListener('click',()=>document.getElementById('funfact-overlay').classList.remove('open'));
 document.getElementById('exit-btn').addEventListener('click',()=>{
