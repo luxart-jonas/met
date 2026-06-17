@@ -5,232 +5,161 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>Met-App</title>
+<title>Kunst-App</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Jost:wght@300;400;500&display=swap');
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { background:#000; color:#fff; font-family:'Jost',sans-serif; font-weight:300; height:100vh; overflow:hidden; }
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Jost:wght@300;400;500&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#000;color:#fff;font-family:'Jost',sans-serif;font-weight:300;height:100vh;overflow:hidden;}
 
-  /* ── SETUP ── */
-  #setup-screen {
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    min-height:100vh; gap:20px; padding:40px; background:#0a0a0a; overflow-y:auto;
-  }
-  #setup-screen h1 { font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:400; color:#c9a84c; letter-spacing:0.04em; }
-  .section-label { font-size:11px; letter-spacing:0.12em; color:#444; text-transform:uppercase; align-self:flex-start; margin-bottom:-10px; }
-  .divider { width:100%; max-width:420px; border:none; border-top:1px solid #1a1a1a; }
+/* ── SHARED ── */
+.screen{display:none;position:fixed;inset:0;overflow-y:auto;}
+.screen.active{display:flex;flex-direction:column;}
+.gold{color:#c9a84c;}
+.top-bar{display:flex;align-items:center;gap:12px;padding:16px 20px;background:#0a0a0a;border-bottom:1px solid #1a1a1a;position:sticky;top:0;z-index:20;flex-shrink:0;}
+.top-bar h2{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:400;color:#c9a84c;flex:1;}
+.btn-back{background:transparent;border:0.5px solid #333;border-radius:100px;padding:7px 16px;color:#666;font-family:'Jost',sans-serif;font-size:12px;cursor:pointer;-webkit-appearance:none;white-space:nowrap;}
+.btn-gold{background:#c9a84c;color:#000;border:none;border-radius:100px;padding:9px 22px;font-family:'Jost',sans-serif;font-size:13px;font-weight:500;cursor:pointer;-webkit-appearance:none;white-space:nowrap;}
+.btn-gold:disabled{opacity:0.3;cursor:default;}
+.btn-ghost{background:transparent;border:0.5px solid #333;border-radius:100px;padding:7px 14px;color:#888;font-family:'Jost',sans-serif;font-size:12px;cursor:pointer;-webkit-appearance:none;}
 
-  .upload-zone {
-    border:1px dashed #333; border-radius:16px; padding:20px 40px;
-    text-align:center; cursor:pointer; width:100%; max-width:420px;
-    display:block; position:relative; background:#111;
-  }
-  .upload-zone p { color:#555; font-size:13px; margin-top:4px; }
-  .upload-zone .icon { font-size:26px; margin-bottom:4px; }
-  .upload-zone input[type=file] { position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; font-size:16px; }
-  .loaded-ok { font-size:13px; color:#4ade80; display:none; margin-top:-10px; }
+/* ── SETUP ── */
+#setup-screen{background:#0a0a0a;align-items:center;justify-content:flex-start;padding:40px 20px 60px;}
+#setup-screen.active{display:flex;}
+.setup-inner{display:flex;flex-direction:column;align-items:center;gap:20px;width:100%;max-width:420px;}
+.setup-inner h1{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:400;color:#c9a84c;letter-spacing:0.04em;}
+.section-label{font-size:11px;letter-spacing:0.12em;color:#444;text-transform:uppercase;align-self:flex-start;margin-bottom:-10px;}
+.divider{width:100%;border:none;border-top:1px solid #1a1a1a;}
+.upload-zone{border:1px dashed #333;border-radius:16px;padding:20px 40px;text-align:center;cursor:pointer;width:100%;display:block;position:relative;background:#111;}
+.upload-zone p{color:#555;font-size:13px;margin-top:4px;}
+.upload-zone input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:16px;}
+.loaded-ok{font-size:13px;color:#4ade80;display:none;margin-top:-10px;}
+.filter-wrap{width:100%;position:relative;}
+.filter-wrap input{width:100%;background:#111;border:1px solid #2a2a2a;border-radius:100px;padding:12px 44px 12px 18px;color:#fff;font-family:'Jost',sans-serif;font-size:14px;outline:none;-webkit-appearance:none;}
+.filter-wrap button{position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:#444;font-size:16px;cursor:pointer;padding:4px;}
+.key-row{display:flex;gap:8px;width:100%;}
+.key-row input{flex:1;background:#111;border:1px solid #2a2a2a;border-radius:100px;padding:11px 18px;color:#fff;font-family:'Jost',sans-serif;font-size:13px;outline:none;-webkit-appearance:none;}
+.btn-small{background:#1e1e1e;border:1px solid #333;border-radius:100px;padding:10px 18px;color:#aaa;font-family:'Jost',sans-serif;font-size:12px;cursor:pointer;white-space:nowrap;-webkit-appearance:none;}
+.key-status{font-size:12px;color:#4ade80;display:none;margin-top:-10px;align-self:flex-start;}
+.settings-row{display:flex;align-items:center;gap:12px;color:#888;font-size:14px;width:100%;}
+.settings-row label{min-width:110px;}
+.settings-row input[type=range]{flex:1;accent-color:#c9a84c;}
+.settings-row span{min-width:60px;color:#fff;font-size:14px;text-align:right;}
+.main-btn{background:#c9a84c;color:#000;border:none;border-radius:100px;padding:14px 52px;font-family:'Jost',sans-serif;font-size:14px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;-webkit-appearance:none;}
+.main-btn:disabled{opacity:0.3;cursor:default;}
+.hint{font-size:12px;color:#333;text-align:center;max-width:340px;line-height:1.6;}
+#filter-hint{font-size:12px;color:#555;text-align:center;line-height:1.6;min-height:32px;}
 
-  /* DB Status Bar */
-  #db-status {
-    width:100%; max-width:420px; background:#111; border:1px solid #222;
-    border-radius:12px; padding:14px 18px; font-size:13px; color:#666;
-  }
-  #db-status.ready { border-color:#1a3a1a; color:#4ade80; }
-  #db-status.loading { border-color:#3a3a1a; color:#c9a84c; }
-  #db-status.error { border-color:#3a1a1a; color:#ef4444; }
-  #db-progress { height:3px; background:#222; border-radius:2px; margin-top:10px; display:none; }
-  #db-progress-bar { height:100%; background:#c9a84c; border-radius:2px; width:0%; transition:width 0.3s; }
+/* ── SAMMLUNGEN ── */
+#collections-screen{background:#0a0a0a;}
+.coll-list{padding:12px;display:flex;flex-direction:column;gap:8px;}
+.coll-item{background:#111;border:1px solid #1e1e1e;border-radius:12px;padding:16px 18px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:border-color 0.15s;}
+.coll-item:hover{border-color:#333;}
+.coll-info{flex:1;}
+.coll-name{font-size:15px;color:#e8e0d0;margin-bottom:2px;}
+.coll-meta{font-size:12px;color:#555;}
+.coll-actions{display:flex;gap:8px;}
+.coll-new{margin:12px;padding:14px;background:transparent;border:1px dashed #2a2a2a;border-radius:12px;color:#555;font-family:'Jost',sans-serif;font-size:13px;cursor:pointer;-webkit-appearance:none;width:calc(100% - 24px);text-align:center;}
+.coll-new:hover{border-color:#444;color:#888;}
 
-  .filter-wrap { width:100%; max-width:420px; position:relative; }
-  .filter-wrap input {
-    width:100%; background:#111; border:1px solid #2a2a2a; border-radius:100px;
-    padding:12px 44px 12px 18px; color:#fff; font-family:'Jost',sans-serif;
-    font-size:14px; font-weight:300; outline:none; -webkit-appearance:none;
-  }
-  .filter-wrap button {
-    position:absolute; right:14px; top:50%; transform:translateY(-50%);
-    background:none; border:none; color:#444; font-size:16px; cursor:pointer; padding:4px;
-  }
-  #filter-hint { font-size:12px; color:#555; text-align:center; max-width:340px; line-height:1.5; min-height:16px; }
+/* ── GALERIE ── */
+#gallery-screen{background:#0a0a0a;}
+#gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px;padding:12px;}
+.gallery-item{position:relative;aspect-ratio:1;cursor:pointer;border-radius:6px;overflow:visible;background:#111;border:2px solid transparent;transition:border-color 0.15s;}
+.gallery-item.selected{border-color:#c9a84c;}
+.gallery-item img{width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity 0.3s;border-radius:4px;}
+.gallery-item img.loaded{opacity:1;}
+.gallery-item .check{position:absolute;top:5px;right:5px;width:20px;height:20px;border-radius:50%;background:#c9a84c;color:#000;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.15s;z-index:10;}
+.gallery-item.selected .check{opacity:1;}
+.gallery-item .img-title{position:absolute;bottom:0;left:0;right:0;padding:14px 5px 5px;font-size:10px;color:rgba(255,255,255,0.85);line-height:1.3;background:linear-gradient(transparent,rgba(0,0,0,0.75));opacity:0;transition:opacity 0.15s;border-radius:0 0 4px 4px;}
+.gallery-item:hover .img-title{opacity:1;}
+#gallery-status{text-align:center;color:#555;font-size:13px;padding:20px;}
+#load-more-wrap{text-align:center;padding:20px;}
+#load-more-btn{padding:12px 36px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:100px;color:#888;font-family:'Jost',sans-serif;font-size:13px;cursor:pointer;-webkit-appearance:none;}
+.zoom-overlay{display:none;position:fixed;z-index:1000;pointer-events:none;box-shadow:0 8px 40px rgba(0,0,0,0.8);border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,0.1);}
+.zoom-overlay img{display:block;width:100%;height:100%;object-fit:contain;background:#0a0a0a;}
+.zoom-caption{position:absolute;bottom:0;left:0;right:0;padding:16px 12px 10px;font-size:11px;color:rgba(255,255,255,0.85);background:linear-gradient(transparent,rgba(0,0,0,0.8));line-height:1.4;}
 
-  .settings-row { display:flex; align-items:center; gap:12px; color:#888; font-size:14px; width:100%; max-width:420px; }
-  .settings-row label { min-width:110px; }
-  .settings-row input[type=range] { flex:1; accent-color:#c9a84c; }
-  .settings-row span { min-width:60px; color:#fff; font-size:14px; text-align:right; }
+/* ── PREVIEW (Kuratier-Modus) ── */
+#preview-screen{background:#000;}
+#preview-img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;}
+#preview-overlay{position:absolute;bottom:0;left:0;right:0;padding:24px 24px 100px;background:linear-gradient(transparent,rgba(0,0,0,0.85));}
+#preview-artist{font-size:12px;color:rgba(255,255,255,0.45);letter-spacing:0.08em;margin-bottom:3px;}
+#preview-titel{font-size:16px;color:rgba(255,255,255,0.85);margin-bottom:12px;}
+#preview-funfact{font-size:13px;color:rgba(255,255,255,0.55);line-height:1.6;white-space:pre-line;}
+#preview-loading{font-size:12px;color:#c9a84c;margin-top:8px;display:none;}
+.preview-controls{position:absolute;bottom:24px;left:0;right:0;display:flex;align-items:center;justify-content:center;gap:16px;}
+.prev-btn{width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,0.08);border:0.5px solid rgba(255,255,255,0.15);color:#fff;font-size:20px;cursor:pointer;-webkit-appearance:none;display:flex;align-items:center;justify-content:center;}
+.preview-add-btn{background:#c9a84c;color:#000;border:none;border-radius:100px;padding:12px 28px;font-family:'Jost',sans-serif;font-size:13px;font-weight:500;cursor:pointer;-webkit-appearance:none;}
+.preview-add-btn.added{background:#4ade80;}
+#preview-back{position:absolute;top:14px;left:14px;background:rgba(255,255,255,0.07);border:0.5px solid rgba(255,255,255,0.12);border-radius:100px;padding:8px 16px;font-size:12px;color:rgba(255,255,255,0.4);cursor:pointer;-webkit-appearance:none;}
+#preview-counter{font-size:12px;color:rgba(255,255,255,0.3);min-width:60px;text-align:center;}
 
-  .key-row { display:flex; gap:8px; width:100%; max-width:420px; }
-  .key-row input {
-    flex:1; background:#111; border:1px solid #2a2a2a; border-radius:100px;
-    padding:11px 18px; color:#fff; font-family:'Jost',sans-serif; font-size:13px; outline:none; -webkit-appearance:none;
-  }
-  .btn-small {
-    background:#1e1e1e; border:1px solid #333; border-radius:100px;
-    padding:10px 18px; color:#aaa; font-family:'Jost',sans-serif;
-    font-size:12px; cursor:pointer; white-space:nowrap; -webkit-appearance:none;
-  }
-  .key-status { font-size:12px; color:#4ade80; display:none; margin-top:-10px; align-self:flex-start; }
+/* ── SAMMLUNG BEARBEITEN ── */
+#edit-screen{background:#0a0a0a;}
+.edit-item{background:#111;border:1px solid #1e1e1e;border-radius:12px;margin:8px 12px;overflow:hidden;}
+.edit-item-top{display:flex;gap:12px;padding:12px;}
+.edit-thumb{width:72px;height:72px;object-fit:cover;border-radius:6px;flex-shrink:0;}
+.edit-meta{flex:1;min-width:0;}
+.edit-artist{font-size:11px;color:#555;letter-spacing:0.06em;margin-bottom:3px;}
+.edit-fields{padding:0 12px 12px;display:flex;flex-direction:column;gap:8px;}
+.edit-input{width:100%;background:#0a0a0a;border:1px solid #2a2a2a;border-radius:8px;padding:10px 12px;color:#e8e0d0;font-family:'Jost',sans-serif;font-size:13px;outline:none;-webkit-appearance:none;resize:none;}
+.edit-label{font-size:10px;color:#444;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;}
+.edit-remove{background:transparent;border:none;color:#444;font-size:18px;cursor:pointer;padding:4px;flex-shrink:0;line-height:1;}
 
-  .search-btn {
-    background:#c9a84c; color:#000; border:none; border-radius:100px;
-    padding:14px 52px; font-family:'Jost',sans-serif;
-    font-size:14px; font-weight:500; letter-spacing:0.08em;
-    text-transform:uppercase; cursor:pointer; -webkit-appearance:none; transition:opacity 0.2s;
-  }
-  .search-btn:disabled { opacity:0.3; cursor:default; }
-  .hint { font-size:12px; color:#333; text-align:center; max-width:340px; line-height:1.6; }
-
-  /* ── GALERIE ── */
-  #gallery-screen { display:none; position:fixed; inset:0; background:#0a0a0a; overflow-y:auto; padding:0 0 100px; }
-  #gallery-header {
-    display:flex; align-items:center; gap:12px; padding:16px 20px;
-    position:sticky; top:0; background:#0a0a0a; z-index:10;
-    border-bottom:1px solid #1a1a1a;
-  }
-  #gallery-header h2 { font-family:'Cormorant Garamond',serif; font-size:18px; font-weight:400; color:#c9a84c; flex:1; }
-  #gallery-count { font-size:12px; color:#555; white-space:nowrap; }
-  #back-to-setup {
-    background:transparent; border:0.5px solid #333; border-radius:100px;
-    padding:7px 16px; color:#666; font-family:'Jost',sans-serif; font-size:12px; cursor:pointer; -webkit-appearance:none;
-  }
-  #gallery-start-btn {
-    background:#c9a84c; color:#000; border:none; border-radius:100px;
-    padding:9px 22px; font-family:'Jost',sans-serif; font-size:13px; font-weight:500;
-    cursor:pointer; -webkit-appearance:none; white-space:nowrap;
-  }
-  #gallery-start-btn:disabled { opacity:0.3; cursor:default; }
-
-  #gallery-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:6px; padding:12px; }
-  .gallery-item {
-    position:relative; aspect-ratio:1; cursor:pointer; border-radius:6px;
-    overflow:hidden; background:#111; border:2px solid transparent; transition:border-color 0.15s;
-  }
-  .gallery-item.selected { border-color:#c9a84c; }
-  .gallery-item img { width:100%; height:100%; object-fit:cover; display:block; }
-  .gallery-item .check {
-    position:absolute; top:5px; right:5px; width:20px; height:20px; border-radius:50%;
-    background:#c9a84c; color:#000; font-size:11px; font-weight:700;
-    display:flex; align-items:center; justify-content:center;
-    opacity:0; transition:opacity 0.15s;
-  }
-  .gallery-item.selected .check { opacity:1; }
-  .gallery-item .img-title {
-    position:absolute; bottom:0; left:0; right:0; padding:14px 5px 5px;
-    font-size:10px; color:rgba(255,255,255,0.85); line-height:1.3;
-    background:linear-gradient(transparent,rgba(0,0,0,0.75));
-    opacity:0; transition:opacity 0.15s;
-  }
-  .gallery-item:hover .img-title { opacity:1; }
-  #gallery-loading { text-align:center; color:#444; font-size:13px; padding:40px 20px; line-height:1.8; }
-
-  /* ── DISPLAY ── */
-  #display-screen { display:none; position:fixed; inset:0; background:#000; user-select:none; }
-  #art-img { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; opacity:0; transition:opacity 0.8s ease; }
-  #art-img.visible { opacity:1; }
-  #title-bar {
-    position:absolute; bottom:0; left:0; right:0; padding:40px 32px 28px;
-    background:linear-gradient(transparent,rgba(0,0,0,0.75));
-    opacity:0; transition:opacity 0.8s ease; pointer-events:none;
-  }
-  #title-bar.visible { opacity:1; }
-  #title-bar .art-titel { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:22px; color:#fff; margin-bottom:4px; }
-  #title-bar .art-artist { font-size:13px; color:rgba(255,255,255,0.6); letter-spacing:0.06em; }
-  #info-btn {
-    position:absolute; bottom:28px; right:28px; width:88px; height:88px; border-radius:50%;
-    background:#c0392b; border:none; color:#fff; font-size:36px; font-weight:600;
-    cursor:pointer; -webkit-appearance:none; opacity:0; transition:opacity 0.8s ease;
-    display:flex; align-items:center; justify-content:center; box-shadow:0 4px 20px rgba(192,57,43,0.6);
-  }
-  #info-btn.visible { opacity:1; pointer-events:auto; }
-  #funfact-overlay {
-    display:none; position:absolute; inset:0; background:rgba(0,0,0,0.55);
-    align-items:center; justify-content:center; padding:40px 32px;
-    backdrop-filter:blur(2px); -webkit-backdrop-filter:blur(2px);
-  }
-  #funfact-overlay.open { display:flex; }
-  .funfact-box { max-width:520px; width:100%; background:rgba(0,0,0,0.55); border-radius:16px; padding:28px 32px; backdrop-filter:blur(8px); }
-  .ff-label { font-size:10px; letter-spacing:0.15em; text-transform:uppercase; color:#c9a84c; margin-bottom:16px; }
-  .ff-titel { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:24px; color:#fff; margin-bottom:6px; }
-  .ff-artist { font-size:13px; color:rgba(255,255,255,0.5); letter-spacing:0.06em; margin-bottom:24px; }
-  .ff-text { font-size:16px; line-height:1.75; color:rgba(255,255,255,0.85); white-space:pre-line; }
-  #back-btn {
-    margin-top:32px; background:transparent; border:1px solid rgba(255,255,255,0.2); border-radius:100px;
-    padding:10px 28px; color:rgba(255,255,255,0.5); font-family:'Jost',sans-serif;
-    font-size:12px; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer; -webkit-appearance:none;
-  }
-  #video-feed { position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; }
-  canvas#diff-canvas { display:none; }
-  #delete-btn {
-    position:absolute; top:14px; left:14px; background:rgba(255,255,255,0.07);
-    border:0.5px solid rgba(255,255,255,0.12); border-radius:100px; padding:8px 16px;
-    font-size:12px; color:rgba(255,255,255,0.4); cursor:pointer; -webkit-appearance:none;
-    opacity:0; transition:opacity 0.3s; letter-spacing:0.06em;
-  }
-  #display-screen:hover #delete-btn { opacity:1; }
-  #delete-confirm {
-    display:none; position:absolute; top:14px; left:14px;
-    background:rgba(180,30,20,0.85); border:0.5px solid rgba(255,100,80,0.3);
-    border-radius:100px; padding:8px 16px; font-size:12px; color:rgba(255,255,255,0.9);
-    cursor:pointer; -webkit-appearance:none; letter-spacing:0.06em; backdrop-filter:blur(4px);
-  }
-  #exit-btn {
-    position:absolute; top:14px; right:14px; background:rgba(255,255,255,0.07);
-    border:0.5px solid rgba(255,255,255,0.12); border-radius:100px; padding:8px 16px;
-    font-size:12px; color:rgba(255,255,255,0.4); cursor:pointer; -webkit-appearance:none;
-    opacity:0; transition:opacity 0.3s;
-  }
-  #display-screen:hover #exit-btn { opacity:1; }
-  #status-bar {
-    position:absolute; bottom:80px; left:50%; transform:translateX(-50%);
-    background:rgba(255,255,255,0.06); border:0.5px solid rgba(255,255,255,0.1);
-    border-radius:100px; padding:7px 18px; font-size:11px; color:rgba(255,255,255,0.35);
-    letter-spacing:0.08em; white-space:nowrap; opacity:0; transition:opacity 0.3s;
-  }
-  #display-screen:hover #status-bar { opacity:1; }
-  #prefetch-dot {
-    position:absolute; bottom:14px; right:14px; width:6px; height:6px;
-    border-radius:50%; background:#c9a84c; opacity:0; transition:opacity 0.3s;
-  }
-  #prefetch-dot.loading { opacity:0.5; animation:pulse 1s infinite; }
-  @keyframes pulse { 0%,100%{opacity:0.2}50%{opacity:0.7} }
+/* ── DISPLAY ── */
+#display-screen{background:#000;overflow:hidden;}
+#display-screen.active{display:block;}
+#art-img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:0;transition:opacity 0.8s ease;}
+#art-img.visible{opacity:1;}
+#title-bar{position:absolute;bottom:0;left:0;right:280px;padding:32px 32px 24px;background:linear-gradient(transparent,rgba(0,0,0,0.55));opacity:0;transition:opacity 0.8s ease;pointer-events:none;}
+#title-bar.visible{opacity:1;}
+.art-artist{font-family:'Jost',sans-serif;font-weight:300;font-size:12px;color:rgba(255,255,255,0.45);letter-spacing:0.08em;margin-bottom:4px;}
+.art-titel{font-family:'Jost',sans-serif;font-weight:300;font-size:15px;color:rgba(255,255,255,0.7);letter-spacing:0.03em;}
+#info-btn{position:absolute;bottom:28px;right:28px;width:88px;height:88px;border-radius:50%;background:#c0392b;border:none;color:#fff;font-size:36px;font-weight:600;cursor:pointer;-webkit-appearance:none;opacity:0;transition:opacity 0.8s ease;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(192,57,43,0.6);}
+#info-btn.visible{opacity:1;pointer-events:auto;}
+#funfact-overlay{display:none;position:absolute;inset:0;background:rgba(0,0,0,0.55);align-items:center;justify-content:center;padding:40px 32px;backdrop-filter:blur(2px);}
+#funfact-overlay.open{display:flex;}
+.funfact-box{max-width:520px;width:100%;background:rgba(0,0,0,0.55);border-radius:16px;padding:28px 32px;backdrop-filter:blur(8px);}
+.ff-label{font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:#c9a84c;margin-bottom:16px;}
+.ff-titel{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:24px;color:#fff;margin-bottom:6px;}
+.ff-artist{font-size:13px;color:rgba(255,255,255,0.5);letter-spacing:0.06em;margin-bottom:24px;}
+.ff-text{font-size:16px;line-height:1.75;color:rgba(255,255,255,0.85);white-space:pre-line;}
+#back-btn{margin-top:32px;background:transparent;border:1px solid rgba(255,255,255,0.2);border-radius:100px;padding:10px 28px;color:rgba(255,255,255,0.5);font-family:'Jost',sans-serif;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;-webkit-appearance:none;}
+#video-feed{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;}
+canvas{display:none;}
+#delete-btn{position:absolute;top:14px;left:14px;background:rgba(255,255,255,0.07);border:0.5px solid rgba(255,255,255,0.12);border-radius:100px;padding:8px 16px;font-size:12px;color:rgba(255,255,255,0.4);cursor:pointer;-webkit-appearance:none;opacity:0;transition:opacity 0.3s;}
+#display-screen:hover #delete-btn{opacity:1;}
+#delete-confirm{display:none;position:absolute;top:14px;left:14px;background:rgba(180,30,20,0.85);border:0.5px solid rgba(255,100,80,0.3);border-radius:100px;padding:8px 16px;font-size:12px;color:rgba(255,255,255,0.9);cursor:pointer;-webkit-appearance:none;backdrop-filter:blur(4px);}
+#exit-btn{position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.07);border:0.5px solid rgba(255,255,255,0.12);border-radius:100px;padding:8px 16px;font-size:12px;color:rgba(255,255,255,0.4);cursor:pointer;-webkit-appearance:none;opacity:0;transition:opacity 0.3s;}
+#display-screen:hover #exit-btn{opacity:1;}
+#status-bar{position:absolute;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.1);border-radius:100px;padding:7px 18px;font-size:11px;color:rgba(255,255,255,0.35);letter-spacing:0.08em;white-space:nowrap;opacity:0;transition:opacity 0.3s;}
+#display-screen:hover #status-bar{opacity:1;}
+#prefetch-dot{position:absolute;bottom:14px;right:14px;width:6px;height:6px;border-radius:50%;background:#c9a84c;opacity:0;}
+#prefetch-dot.loading{opacity:0.5;animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{opacity:0.2}50%{opacity:0.7}}
 </style>
 </head>
 <body>
 
 <!-- SETUP -->
-<div id="setup-screen">
-  <h1>Met-App</h1>
-
-  <div id="db-status">
-    <span id="db-status-text">⏳ Kunstwerk-Datenbank wird geprüft…</span>
-    <div id="db-progress"><div id="db-progress-bar"></div></div>
-  </div>
-
+<div id="setup-screen" class="screen active">
+<div class="setup-inner">
+  <h1>Kunst-App</h1>
   <span class="section-label">Sound (optional)</span>
   <label class="upload-zone">
-    <div class="icon">🔊</div>
+    <div style="font-size:26px;margin-bottom:4px">🔊</div>
     <strong style="font-size:14px">Audio hochladen</strong>
     <p>MP3, WAV — läuft im Loop</p>
     <input type="file" id="audio-input" accept="*/*">
   </label>
   <div class="loaded-ok" id="audio-loaded">✓ Audio geladen</div>
-
-  <hr class="divider">
-  <span class="section-label">Filter</span>
-  <div class="filter-wrap">
-    <input type="text" id="filter-input" placeholder="z.B. Goya · Rembrandt · crucifixion · landscape …"
-      autocomplete="off" autocorrect="off" spellcheck="false">
-    <button onclick="document.getElementById('filter-input').value='';updateFilterHint()">✕</button>
-  </div>
-  <div id="filter-hint">Erst Datenbank laden, dann filtern</div>
-
   <hr class="divider">
   <span class="section-label">Anthropic API Key</span>
   <div class="key-row">
     <input type="password" id="anthropic-key-input" placeholder="sk-ant-…" autocomplete="off" spellcheck="false">
-    <button class="btn-small" onclick="saveAnthropicKey()">Speichern</button>
+    <button class="btn-small" onclick="saveKey()">Speichern</button>
   </div>
-  <div class="key-status" id="anthropic-key-status">✓ Gespeichert</div>
-
+  <div class="key-status" id="key-status">✓ Gespeichert</div>
   <hr class="divider">
   <span class="section-label">Einstellungen</span>
   <div class="settings-row">
@@ -248,31 +177,82 @@
     <input type="range" id="volume-slider" min="0" max="100" step="5" value="70">
     <span id="volume-label">70%</span>
   </div>
-
-  <button class="search-btn" id="search-btn" disabled>Suchen</button>
-  <p class="hint">Datenbank einmalig laden — danach blitzschnelle Suche offline.</p>
+  <hr class="divider">
+  <button class="main-btn" onclick="showScreen('collections-screen')">Meine Sammlungen</button>
+  <p class="hint">Kuratiere Sammlungen und spiele sie per Bewegungserkennung ab.</p>
+</div>
 </div>
 
-<!-- GALERIE -->
-<div id="gallery-screen">
-  <div id="gallery-header">
-    <button id="back-to-setup">← Zurück</button>
-    <h2 id="gallery-title">Galerie</h2>
-    <span id="gallery-count"></span>
-    <button id="gallery-start-btn" disabled>Starten</button>
+<!-- SAMMLUNGEN -->
+<div id="collections-screen" class="screen">
+  <div class="top-bar">
+    <button class="btn-back" onclick="showScreen('setup-screen')">← Zurück</button>
+    <h2>Sammlungen</h2>
+    <button class="btn-gold" onclick="newCollection()">+ Neu</button>
   </div>
-  <div id="gallery-loading"></div>
+  <div class="coll-list" id="coll-list"></div>
+</div>
+
+<!-- GALERIE (Suche + Auswahl) -->
+<div id="gallery-screen" class="screen">
+  <div class="top-bar">
+    <button class="btn-back" id="gallery-back-btn">← Zurück</button>
+    <h2 id="gallery-title">Galerie</h2>
+    <span id="gallery-count" style="font-size:12px;color:#555;white-space:nowrap;"></span>
+    <button class="btn-gold" id="gallery-preview-btn" disabled>Kuratieren →</button>
+  </div>
+  <div style="padding:12px 12px 0;">
+    <div class="filter-wrap">
+      <input type="text" id="filter-input" placeholder="z.B. Rembrandt · Monet · crucifixion …" autocomplete="off" autocorrect="off" spellcheck="false">
+      <button onclick="document.getElementById('filter-input').value=''">✕</button>
+    </div>
+    <div id="filter-hint" style="margin-top:8px;"></div>
+  </div>
+  <div id="gallery-status"></div>
   <div id="gallery-grid"></div>
+  <div id="load-more-wrap" style="display:none"><button id="load-more-btn">Mehr laden</button></div>
+</div>
+
+<!-- PREVIEW (Kuratier-Modus) -->
+<div id="preview-screen" class="screen" style="overflow:hidden;">
+  <img id="preview-img" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;">
+  <div id="preview-overlay">
+    <div id="preview-artist"></div>
+    <div id="preview-titel"></div>
+    <div id="preview-funfact"></div>
+    <div id="preview-loading">⏳ Analysiere…</div>
+  </div>
+  <div class="preview-controls">
+    <button class="prev-btn" id="preview-prev">‹</button>
+    <span id="preview-counter"></span>
+    <button class="preview-add-btn" id="preview-add-btn">+ Zur Sammlung</button>
+    <button class="prev-btn" id="preview-next">›</button>
+  </div>
+  <button id="preview-back">← Zurück</button>
+</div>
+
+<!-- SAMMLUNG BEARBEITEN -->
+<div id="edit-screen" class="screen">
+  <div class="top-bar">
+    <button class="btn-back" id="edit-back-btn">← Zurück</button>
+    <h2 id="edit-title">Sammlung</h2>
+    <button class="btn-ghost" id="edit-play-btn">▶ Abspielen</button>
+  </div>
+  <div id="edit-list"></div>
+  <div style="padding:20px;text-align:center;">
+    <button class="btn-ghost" id="edit-add-more-btn" style="margin-right:8px;">+ Werke hinzufügen</button>
+    <button class="btn-ghost" id="edit-delete-coll-btn" style="color:#ef4444;border-color:#ef4444;">Sammlung löschen</button>
+  </div>
 </div>
 
 <!-- DISPLAY -->
-<div id="display-screen">
+<div id="display-screen" class="screen" style="overflow:hidden;">
   <img id="art-img" alt="">
   <video id="video-feed" autoplay muted playsinline></video>
   <canvas id="diff-canvas" width="160" height="120"></canvas>
   <div id="title-bar">
-    <div class="art-titel" id="d-titel"></div>
     <div class="art-artist" id="d-artist"></div>
+    <div class="art-titel" id="d-titel"></div>
   </div>
   <button id="info-btn">i</button>
   <div id="funfact-overlay">
@@ -280,85 +260,73 @@
       <div class="ff-label">Funfact</div>
       <div class="ff-titel" id="ff-titel"></div>
       <div class="ff-artist" id="ff-artist"></div>
-      <div class="ff-text" id="ff-text">Wird geladen…</div>
+      <div class="ff-text" id="ff-text">…</div>
       <button id="back-btn">← Zurück</button>
     </div>
   </div>
-  <button id="delete-btn">✕ Sperren</button>
-  <button id="delete-confirm">Wirklich sperren?</button>
+  <button id="delete-btn">✕ Entfernen</button>
+  <button id="delete-confirm">Wirklich entfernen?</button>
   <div id="status-bar">WARTEN AUF BEWEGUNG</div>
   <div id="prefetch-dot"></div>
   <button id="exit-btn">✕ Beenden</button>
 </div>
 
+<!-- ZOOM OVERLAY -->
+<div class="zoom-overlay" id="zoom-overlay">
+  <img id="zoom-img" alt="">
+  <div class="zoom-caption" id="zoom-caption"></div>
+</div>
+
 <script>
 // ── Konfiguration ──────────────────────────────────────
-const SUPABASE_URL = 'https://ormpszktwwiahjooukjk.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ybXBzemt0d3dpYWhqb291a2prIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4NzM5NTAsImV4cCI6MjA5NjQ0OTk1MH0.Jz4rKTlrvRbfdxS1e8fRkwXeD3CJsITeC6Q4lDBjfCc';
-const BLOCKED_TABLE = 'met_blocked';
-const MET_CSV_URL = 'https://media.githubusercontent.com/media/metmuseum/openaccess/master/MetObjects.csv';
-const DB_NAME = 'MetAppDB', DB_VERSION = 1, STORE_NAME = 'objects';
+const SB_URL  = 'https://ormpszktwwiahjooukjk.supabase.co';
+const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ybXBzemt0d3dpYWhqb291a2prIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4NzM5NTAsImV4cCI6MjA5NjQ0OTk1MH0.Jz4rKTlrvRbfdxS1e8fRkwXeD3CJsITeC6Q4lDBjfCc';
+const WIKI    = 'https://commons.wikimedia.org/w/api.php';
 
 // ── State ──────────────────────────────────────────────
-let db           = null;   // IndexedDB
-let allWorks     = [];     // alle Werke aus CSV (gefiltert: nur mit Bild)
-let filteredWorks= [];     // nach Suchbegriff gefiltert
-let selectedWorks= [];     // vom User ausgewählt
-let shuffleQueue = [];
-let currentWork  = null;
-let nextWork     = null;
-let prefetchPromise = null;
-let isDisplaying = false;
-let hideTimer    = null;
-let stream       = null;
-let motionInterval = null;
-let prevPixels   = null;
+let activeCollectionId   = null;
+let activeCollectionName = '';
+let activeCollectionItems= []; // {id, image_url, full_url, titel, artist, jahr, funfact}
+let searchResults        = [];
+let selectedForPreview   = [];
+let previewIndex         = 0;
+let previewCache         = {}; // index → {titel, artist, funfact}
+let currentQuery         = '';
+let wikiContinue         = null;
+let isDisplaying         = false;
+let hideTimer            = null;
+let stream               = null;
+let motionInterval       = null;
+let prevPixels           = null;
 let sensitivityThreshold = 10;
-let displayDuration = 180;
-let volume       = 0.7;
-let audioEl      = null;
-let audioUnlocked= false;
-let fadeTimer    = null;
-let blockedIds   = new Set();
+let displayDuration      = 180;
+let volume               = 0.7;
+let audioEl              = null;
+let audioUnlocked        = false;
+let fadeTimer            = null;
+let shuffleQueue         = [];
+let currentWork          = null;
+let nextWork             = null;
+let prefetchPromise      = null;
 const W = 160, H = 120;
 
-// ── DOM ────────────────────────────────────────────────
-const setupScreen    = document.getElementById('setup-screen');
-const galleryScreen  = document.getElementById('gallery-screen');
-const displayScreen  = document.getElementById('display-screen');
-const artImg         = document.getElementById('art-img');
-const titleBar       = document.getElementById('title-bar');
-const infoBtn        = document.getElementById('info-btn');
-const funfactOverlay = document.getElementById('funfact-overlay');
-const ffText         = document.getElementById('ff-text');
-const statusBar      = document.getElementById('status-bar');
-const videoFeed      = document.getElementById('video-feed');
-const diffCanvas     = document.getElementById('diff-canvas');
-const ctx            = diffCanvas.getContext('2d', { willReadFrequently: true });
-const dbStatusEl     = document.getElementById('db-status');
-const dbStatusText   = document.getElementById('db-status-text');
-const dbProgress     = document.getElementById('db-progress');
-const dbProgressBar  = document.getElementById('db-progress-bar');
-const filterInput    = document.getElementById('filter-input');
-const filterHint     = document.getElementById('filter-hint');
-const searchBtn      = document.getElementById('search-btn');
-const galleryGrid    = document.getElementById('gallery-grid');
-const galleryCount   = document.getElementById('gallery-count');
-const galleryTitle   = document.getElementById('gallery-title');
-const galleryStartBtn= document.getElementById('gallery-start-btn');
-const galleryLoading = document.getElementById('gallery-loading');
-const prefetchDot    = document.getElementById('prefetch-dot');
-
-// ── Anthropic Key ──────────────────────────────────────
-function getAnthropicKey() { return localStorage.getItem('anthropic_api_key') || ''; }
-function saveAnthropicKey() {
-  const val = document.getElementById('anthropic-key-input').value.trim();
-  if (!val) return;
-  localStorage.setItem('anthropic_api_key', val);
-  document.getElementById('anthropic-key-input').value = '';
-  document.getElementById('anthropic-key-status').style.display = 'block';
+// ── Screen Navigation ──────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (id === 'collections-screen') loadCollections();
 }
-if (getAnthropicKey()) document.getElementById('anthropic-key-status').style.display = 'block';
+
+// ── API Key ────────────────────────────────────────────
+function getKey() { return localStorage.getItem('anthropic_api_key') || ''; }
+function saveKey() {
+  const v = document.getElementById('anthropic-key-input').value.trim();
+  if (!v) return;
+  localStorage.setItem('anthropic_api_key', v);
+  document.getElementById('anthropic-key-input').value = '';
+  document.getElementById('key-status').style.display = 'block';
+}
+if (getKey()) document.getElementById('key-status').style.display = 'block';
 
 // ── Slider ─────────────────────────────────────────────
 document.getElementById('duration-slider').addEventListener('input', e => {
@@ -368,9 +336,9 @@ document.getElementById('duration-slider').addEventListener('input', e => {
 });
 document.getElementById('sensitivity-slider').addEventListener('input', e => {
   sensitivityThreshold = parseInt(e.target.value);
-  const map = {2:'Sehr hoch',7:'Hoch',13:'Mittel',20:'Niedrig',30:'Sehr niedrig'};
-  const k = Object.keys(map).reduce((a,b) => Math.abs(b-sensitivityThreshold)<Math.abs(a-sensitivityThreshold)?b:a);
-  document.getElementById('sensitivity-label').textContent = map[k];
+  const labels = {2:'Sehr hoch',7:'Hoch',13:'Mittel',20:'Niedrig',30:'Sehr niedrig'};
+  const k = Object.keys(labels).reduce((a,b) => Math.abs(b-sensitivityThreshold)<Math.abs(a-sensitivityThreshold)?b:a);
+  document.getElementById('sensitivity-label').textContent = labels[k];
 });
 document.getElementById('volume-slider').addEventListener('input', e => {
   volume = parseInt(e.target.value)/100;
@@ -384,511 +352,559 @@ document.getElementById('audio-input').addEventListener('change', e => {
   audioEl = new Audio(URL.createObjectURL(f));
   audioEl.loop = true; audioEl.volume = volume;
   document.getElementById('audio-loaded').style.display = 'block';
-  displayScreen.addEventListener('click', () => {
-    if (!audioUnlocked) { audioEl.play().then(()=>{audioEl.pause();audioEl.currentTime=0;audioUnlocked=true;}).catch(()=>{}); }
-  }, { once: true });
 });
 
-// ── IndexedDB ──────────────────────────────────────────
-function openDB() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, DB_VERSION);
-    req.onupgradeneeded = e => {
-      const db = e.target.result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME, { keyPath: 'id' });
-      }
-    };
-    req.onsuccess = e => resolve(e.target.result);
-    req.onerror = () => reject(req.error);
-  });
-}
+// ── Supabase Sammlungen ────────────────────────────────
+const sbHeaders = { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
 
-function dbCount(db) {
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, 'readonly');
-    const req = tx.objectStore(STORE_NAME).count();
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-}
-
-function dbGetAll(db) {
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, 'readonly');
-    const req = tx.objectStore(STORE_NAME).getAll();
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-}
-
-function dbPutBatch(db, items) {
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, 'readwrite');
-    const store = tx.objectStore(STORE_NAME);
-    items.forEach(item => store.put(item));
-    tx.oncomplete = resolve;
-    tx.onerror = () => reject(tx.error);
-  });
-}
-
-// ── CSV laden und parsen ───────────────────────────────
-async function loadAndParseCSV() {
-  dbStatusEl.className = 'loading';
-  dbStatusText.textContent = '⬇️ Lade Met Museum Datenbank (ca. 50MB, einmalig)…';
-  dbProgress.style.display = 'block';
-
-  const response = await fetch(MET_CSV_URL);
-  if (!response.ok) throw new Error('CSV nicht erreichbar');
-
-  const reader = response.body.getReader();
-  const contentLength = parseInt(response.headers.get('Content-Length') || '0');
-  let received = 0;
-  const chunks = [];
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    chunks.push(value);
-    received += value.length;
-    if (contentLength > 0) {
-      dbProgressBar.style.width = Math.round(received/contentLength*100) + '%';
-    }
-    // Status aktualisieren
-    dbStatusText.textContent = `⬇️ ${Math.round(received/1024/1024)}MB geladen…`;
-  }
-
-  dbStatusText.textContent = '⚙️ Verarbeite Daten…';
-  dbProgressBar.style.width = '100%';
-
-  // Uint8Arrays zusammenführen und dekodieren
-  const total = chunks.reduce((sum, c) => sum + c.length, 0);
-  const merged = new Uint8Array(total);
-  let offset = 0;
-  for (const chunk of chunks) { merged.set(chunk, offset); offset += chunk.length; }
-  const text = new TextDecoder('utf-8').decode(merged);
-
-  // CSV parsen
-  const lines = text.split('\n');
-  const header = lines[0].split(',');
-  const idIdx      = header.indexOf('Object ID');
-  const titleIdx   = header.indexOf('Title');
-  const artistIdx  = header.indexOf('Artist Display Name');
-  const dateIdx    = header.indexOf('Object Date');
-  const imgIdx     = header.indexOf('Link Resource');
-  const mediumIdx  = header.indexOf('Medium');
-  const deptIdx    = header.indexOf('Department');
-
-  const works = [];
-  for (let i = 1; i < lines.length; i++) {
-    const cols = parseCSVLine(lines[i]);
-    if (!cols || cols.length < Math.max(idIdx, titleIdx, artistIdx, imgIdx) + 1) continue;
-    const img = cols[imgIdx] || '';
-    if (!img.includes('metmuseum.org')) continue; // nur echte Bild-URLs
-    const id = parseInt(cols[idIdx]);
-    if (!id) continue;
-    works.push({
-      id,
-      titel: cols[titleIdx] || '',
-      artist: cols[artistIdx] || '',
-      jahr: cols[dateIdx] || '',
-      medium: cols[mediumIdx] || '',
-      dept: cols[deptIdx] || '',
-      image_url: img
-    });
-  }
-  return works;
-}
-
-function parseCSVLine(line) {
-  const result = [];
-  let cur = '', inQuote = false;
-  for (let i = 0; i < line.length; i++) {
-    const c = line[i];
-    if (c === '"') { inQuote = !inQuote; }
-    else if (c === ',' && !inQuote) { result.push(cur.trim()); cur = ''; }
-    else { cur += c; }
-  }
-  result.push(cur.trim());
-  return result;
-}
-
-// ── Datenbank initialisieren ───────────────────────────
-async function initDB() {
+async function loadCollections() {
+  const list = document.getElementById('coll-list');
+  list.innerHTML = '<div style="padding:20px;color:#444;text-align:center">Lädt…</div>';
   try {
-    db = await openDB();
-    const count = await dbCount(db);
-
-    if (count > 0) {
-      // Bereits geladen — aus IndexedDB lesen
-      dbStatusText.textContent = `⏳ Lade ${count.toLocaleString()} Werke aus lokalem Speicher…`;
-      allWorks = await dbGetAll(db);
-      dbStatusEl.className = 'ready';
-      dbStatusText.textContent = `✓ ${allWorks.length.toLocaleString()} Werke bereit (lokal gespeichert)`;
-      dbProgress.style.display = 'none';
-      searchBtn.disabled = false;
-      updateFilterHint();
-    } else {
-      // Erstmaliger Download
-      const works = await loadAndParseCSV();
-      dbStatusText.textContent = `⚙️ Speichere ${works.length.toLocaleString()} Werke lokal…`;
-
-      // In Batches speichern
-      const batchSize = 1000;
-      for (let i = 0; i < works.length; i += batchSize) {
-        await dbPutBatch(db, works.slice(i, i + batchSize));
-        dbProgressBar.style.width = Math.round(i/works.length*100) + '%';
-      }
-
-      allWorks = works;
-      dbStatusEl.className = 'ready';
-      dbStatusText.textContent = `✓ ${allWorks.length.toLocaleString()} Werke gespeichert — bereit!`;
-      dbProgress.style.display = 'none';
-      searchBtn.disabled = false;
-      updateFilterHint();
+    const res = await fetch(`${SB_URL}/rest/v1/collections?select=id,name,created_at&order=created_at.desc`, { headers: sbHeaders });
+    const cols = await res.json();
+    list.innerHTML = '';
+    if (!cols.length) {
+      list.innerHTML = '<div style="padding:30px;color:#444;text-align:center;font-size:13px">Noch keine Sammlungen.<br>Erstelle deine erste Sammlung.</div>';
     }
+    for (const c of cols) {
+      // Item-Anzahl holen
+      const countRes = await fetch(`${SB_URL}/rest/v1/collection_items?collection_id=eq.${c.id}&select=id`, { headers: sbHeaders });
+      const items = await countRes.json();
+      const div = document.createElement('div');
+      div.className = 'coll-item';
+      div.innerHTML = `<div class="coll-info"><div class="coll-name">${c.name}</div><div class="coll-meta">${items.length} Werke</div></div>
+        <div class="coll-actions">
+          <button class="btn-ghost" onclick="event.stopPropagation();openEditScreen(${c.id},'${c.name.replace(/'/g,"\\'")}')">Bearbeiten</button>
+          <button class="btn-gold" onclick="event.stopPropagation();startCollection(${c.id},'${c.name.replace(/'/g,"\\'")}')">▶</button>
+        </div>`;
+      list.appendChild(div);
+    }
+    // Neue Sammlung Button
+    const btn = document.createElement('button');
+    btn.className = 'coll-new';
+    btn.textContent = '+ Neue Sammlung erstellen';
+    btn.onclick = newCollection;
+    list.appendChild(btn);
   } catch(e) {
-    dbStatusEl.className = 'error';
-    dbStatusText.textContent = '❌ Fehler: ' + e.message;
-    console.error(e);
+    list.innerHTML = `<div style="padding:20px;color:#ef4444;text-align:center">Fehler: ${e.message}</div>`;
   }
 }
 
-// ── Filter ─────────────────────────────────────────────
-function updateFilterHint() {
-  if (!allWorks.length) return;
-  const q = filterInput.value.trim().toLowerCase();
-  if (!q) {
-    filterHint.style.color = '#555';
-    filterHint.textContent = `Alle ${allWorks.length.toLocaleString()} Werke (kein Filter)`;
-    return;
-  }
-  const words = q.split(/\s+/).filter(Boolean);
-  const count = allWorks.filter(w => {
-    const artist = w.artist.toLowerCase();
-    const titel = w.titel.toLowerCase();
-    return words.every(word => artist.includes(word) || titel.includes(word));
-  }).length;
-  filterHint.style.color = count > 0 ? '#4ade80' : '#ef4444';
-  filterHint.textContent = count > 0
-    ? `✓ ${count.toLocaleString()} Werke gefunden für "${filterInput.value.trim()}"`
-    : `Keine Werke gefunden für "${filterInput.value.trim()}"`;
+async function newCollection() {
+  const name = prompt('Name der neuen Sammlung:');
+  if (!name) return;
+  const res = await fetch(`${SB_URL}/rest/v1/collections`, {
+    method:'POST', headers: {...sbHeaders, 'Prefer':'return=representation'},
+    body: JSON.stringify({ name })
+  });
+  const [col] = await res.json();
+  activeCollectionId = col.id;
+  activeCollectionName = col.name;
+  activeCollectionItems = [];
+  openGalleryForCollection();
 }
 
-let filterTimeout = null;
-filterInput.addEventListener('input', () => {
-  clearTimeout(filterTimeout);
-  filterTimeout = setTimeout(updateFilterHint, 300);
+async function openEditScreen(id, name) {
+  activeCollectionId = id;
+  activeCollectionName = name;
+  document.getElementById('edit-title').textContent = name;
+  showScreen('edit-screen');
+  await loadEditItems();
+}
+
+async function loadEditItems() {
+  const list = document.getElementById('edit-list');
+  list.innerHTML = '<div style="padding:20px;color:#444;text-align:center">Lädt…</div>';
+  const res = await fetch(`${SB_URL}/rest/v1/collection_items?collection_id=eq.${activeCollectionId}&select=*&order=position.asc`, { headers: sbHeaders });
+  activeCollectionItems = await res.json();
+  renderEditList();
+}
+
+function renderEditList() {
+  const list = document.getElementById('edit-list');
+  list.innerHTML = '';
+  activeCollectionItems.forEach((item, i) => {
+    const div = document.createElement('div');
+    div.className = 'edit-item';
+    div.innerHTML = `<div class="edit-item-top">
+      <img class="edit-thumb" src="${item.image_url}" alt="">
+      <div class="edit-meta">
+        <div class="edit-artist">${item.artist || ''} ${item.jahr ? '· '+item.jahr : ''}</div>
+        <div style="font-size:13px;color:#e8e0d0;margin-top:4px">${item.titel || ''}</div>
+      </div>
+      <button class="edit-remove" onclick="removeFromCollection(${item.id}, this)">✕</button>
+    </div>
+    <div class="edit-fields">
+      <div><div class="edit-label">Titel</div>
+        <input class="edit-input" value="${(item.titel||'').replace(/"/g,'&quot;')}" onchange="updateItem(${item.id},'titel',this.value)" placeholder="Titel…">
+      </div>
+      <div><div class="edit-label">Funfact</div>
+        <textarea class="edit-input" rows="4" onchange="updateItem(${item.id},'funfact',this.value)" placeholder="Funfact…">${item.funfact||''}</textarea>
+      </div>
+    </div>`;
+    list.appendChild(div);
+  });
+}
+
+async function removeFromCollection(itemId, btn) {
+  if (!confirm('Werk entfernen?')) return;
+  btn.closest('.edit-item').remove();
+  await fetch(`${SB_URL}/rest/v1/collection_items?id=eq.${itemId}`, { method:'DELETE', headers: sbHeaders });
+  activeCollectionItems = activeCollectionItems.filter(i => i.id !== itemId);
+}
+
+async function updateItem(itemId, field, value) {
+  await fetch(`${SB_URL}/rest/v1/collection_items?id=eq.${itemId}`, {
+    method:'PATCH', headers: sbHeaders,
+    body: JSON.stringify({ [field]: value })
+  });
+}
+
+document.getElementById('edit-back-btn').addEventListener('click', () => showScreen('collections-screen'));
+document.getElementById('edit-play-btn').addEventListener('click', () => startCollection(activeCollectionId, activeCollectionName));
+document.getElementById('edit-add-more-btn').addEventListener('click', openGalleryForCollection);
+document.getElementById('edit-delete-coll-btn').addEventListener('click', async () => {
+  if (!confirm(`Sammlung "${activeCollectionName}" löschen?`)) return;
+  await fetch(`${SB_URL}/rest/v1/collection_items?collection_id=eq.${activeCollectionId}`, { method:'DELETE', headers: sbHeaders });
+  await fetch(`${SB_URL}/rest/v1/collections?id=eq.${activeCollectionId}`, { method:'DELETE', headers: sbHeaders });
+  showScreen('collections-screen');
 });
 
 // ── Galerie ────────────────────────────────────────────
-searchBtn.addEventListener('click', () => {
-  const q = filterInput.value.trim().toLowerCase();
-  const words = q ? q.split(/\s+/).filter(Boolean) : [];
+function openGalleryForCollection() {
+  searchResults = [];
+  wikiContinue = null;
+  document.getElementById('gallery-grid').innerHTML = '';
+  document.getElementById('gallery-status').textContent = '';
+  document.getElementById('load-more-wrap').style.display = 'none';
+  document.getElementById('filter-input').value = '';
+  document.getElementById('filter-hint').textContent = '';
+  document.getElementById('gallery-count').textContent = '';
+  document.getElementById('gallery-preview-btn').disabled = true;
+  document.getElementById('gallery-title').textContent = activeCollectionName;
+  document.getElementById('gallery-back-btn').onclick = () => showScreen(activeCollectionItems.length ? 'edit-screen' : 'collections-screen');
+  showScreen('gallery-screen');
+}
 
-  filteredWorks = words.length
-    ? allWorks.filter(w => {
-        const artist = w.artist.toLowerCase();
-        const titel = w.titel.toLowerCase();
-        return words.every(word => artist.includes(word) || titel.includes(word));
-      })
-    : [...allWorks];
+const filterInput = document.getElementById('filter-input');
+filterInput.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
 
-  // Mischen
-  for (let i = filteredWorks.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i+1));
-    [filteredWorks[i], filteredWorks[j]] = [filteredWorks[j], filteredWorks[i]];
-  }
+async function doSearch() {
+  const q = filterInput.value.trim();
+  if (!q) return;
+  currentQuery = q;
+  searchResults = [];
+  wikiContinue = null;
+  document.getElementById('gallery-grid').innerHTML = '';
+  document.getElementById('gallery-status').textContent = `Suche nach "${q}"…`;
+  document.getElementById('load-more-wrap').style.display = 'none';
+  document.getElementById('gallery-preview-btn').disabled = true;
+  document.getElementById('gallery-count').textContent = '';
+  await loadMoreWiki();
+}
 
-  selectedWorks = [];
-  galleryGrid.innerHTML = '';
-  galleryTitle.textContent = filterInput.value.trim() || 'Alle Werke';
-  galleryCount.textContent = `${filteredWorks.length.toLocaleString()} gefunden`;
-  galleryStartBtn.disabled = true;
-
-  // Erste 50 anzeigen
-  showGalleryBatch(0, 50);
-
-  setupScreen.style.display = 'none';
-  galleryScreen.style.display = 'block';
+filterInput.addEventListener('keyup', e => {
+  if (e.key === 'Enter') doSearch();
 });
 
-function showGalleryBatch(from, count) {
-  const batch = filteredWorks.slice(from, from + count);
-  batch.forEach(w => addGalleryItem(w));
+// Add search button
+const filterHintEl = document.getElementById('filter-hint');
+filterInput.addEventListener('input', () => {
+  filterHintEl.textContent = filterInput.value ? 'Enter drücken zum Suchen' : '';
+});
 
-  // "Mehr laden" Button
-  const existing = document.getElementById('load-more-btn');
-  if (existing) existing.remove();
-  if (from + count < filteredWorks.length) {
-    const btn = document.createElement('button');
-    btn.id = 'load-more-btn';
-    btn.textContent = `Mehr laden (${filteredWorks.length - from - count} weitere)`;
-    btn.style.cssText = 'display:block;margin:20px auto;padding:12px 36px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:100px;color:#888;font-family:Jost,sans-serif;font-size:13px;cursor:pointer;-webkit-appearance:none;';
-    btn.addEventListener('click', () => { btn.remove(); showGalleryBatch(from + count, count); });
-    galleryScreen.appendChild(btn);
+async function loadMoreWiki() {
+  document.getElementById('load-more-wrap').style.display = 'none';
+  document.getElementById('gallery-status').textContent = 'Lädt…';
+  try {
+    const { works, continueToken } = await searchWikimedia(currentQuery, wikiContinue);
+    wikiContinue = continueToken;
+    if (!works.length && !searchResults.length) {
+      document.getElementById('gallery-status').textContent = 'Keine Werke gefunden.';
+      return;
+    }
+    works.forEach(w => { searchResults.push(w); addGalleryItem(w); });
+    document.getElementById('gallery-status').textContent = '';
+    document.getElementById('gallery-count').textContent = `${searchResults.length} gefunden`;
+    if (continueToken) {
+      document.getElementById('load-more-wrap').style.display = 'block';
+    }
+  } catch(e) {
+    document.getElementById('gallery-status').textContent = 'Fehler: ' + e.message;
   }
+}
+
+document.getElementById('load-more-btn').addEventListener('click', loadMoreWiki);
+
+// Zoom
+const zoomOverlay = document.getElementById('zoom-overlay');
+const zoomImg     = document.getElementById('zoom-img');
+const zoomCaption = document.getElementById('zoom-caption');
+let zoomTimer = null;
+
+function showZoom(w, rect) {
+  const size = Math.min(window.innerWidth*0.5, window.innerHeight*0.6, 480);
+  zoomImg.src = w.image_url;
+  const ay = [w.artist, w.jahr].filter(Boolean).join(', ');
+  zoomCaption.innerHTML = `${ay ? '<span style="font-size:10px;opacity:0.55">'+ay+'</span><br>' : ''}<strong style="font-size:12px">${w.titel||''}</strong>`;
+  let left = rect.right+12;
+  if (left+size > window.innerWidth-10) left = rect.left-size-12;
+  let top = rect.top+rect.height/2-size/2;
+  top = Math.max(10, Math.min(top, window.innerHeight-size-10));
+  zoomOverlay.style.cssText = `display:block;left:${left}px;top:${top}px;width:${size}px;height:${size}px;`;
 }
 
 function addGalleryItem(w) {
   const item = document.createElement('div');
   item.className = 'gallery-item';
-  item.innerHTML = `<img src="${w.image_url}" loading="lazy" alt="${w.titel}" onerror="this.parentElement.style.display='none'">
-    <div class="check">✓</div>
-    <div class="img-title">${w.titel}${w.artist ? '<br><span style="opacity:0.6">'+w.artist+'</span>' : ''}</div>`;
+  item.innerHTML = `<img alt="${w.titel||''}"><div class="check">✓</div>
+    <div class="img-title">${w.titel||''}${w.artist?'<br><span style="opacity:0.6">'+w.artist+'</span>':''}</div>`;
+  const img = item.querySelector('img');
+  img.src = w.image_url;
+  img.onload = () => img.classList.add('loaded');
+  img.onerror = () => { item.style.display='none'; };
+  item.addEventListener('mouseenter', () => { zoomTimer=setTimeout(()=>showZoom(w,item.getBoundingClientRect()),150); });
+  item.addEventListener('mouseleave', () => { clearTimeout(zoomTimer); zoomOverlay.style.display='none'; });
   item.addEventListener('click', () => {
-    const idx = selectedWorks.findIndex(x => x.id === w.id);
-    if (idx >= 0) {
-      selectedWorks.splice(idx, 1);
-      item.classList.remove('selected');
-    } else {
-      selectedWorks.push(w);
-      item.classList.add('selected');
-    }
-    const sel = selectedWorks.length;
-    galleryCount.textContent = sel > 0
-      ? `${sel} ausgewählt · ${filteredWorks.length.toLocaleString()} gefunden`
-      : `${filteredWorks.length.toLocaleString()} gefunden`;
-    galleryStartBtn.disabled = sel === 0;
+    zoomOverlay.style.display='none';
+    const idx = searchResults.findIndex(x=>x.id===w.id);
+    if (idx<0) return;
+    // Öffne Preview-Modus ab diesem Bild
+    openPreview(idx);
   });
-  galleryGrid.appendChild(item);
+  document.getElementById('gallery-grid').appendChild(item);
 }
 
-document.getElementById('back-to-setup').addEventListener('click', () => {
-  galleryScreen.style.display = 'none';
-  setupScreen.style.display = 'flex';
+// Galerie-Preview Button
+document.getElementById('gallery-preview-btn').addEventListener('click', () => openPreview(0));
+
+// ── Preview Modus ──────────────────────────────────────
+function openPreview(startIdx) {
+  previewIndex = startIdx;
+  previewCache = {};
+  document.getElementById('preview-add-btn').classList.remove('added');
+  document.getElementById('preview-add-btn').textContent = '+ Zur Sammlung';
+  showScreen('preview-screen');
+  showPreviewItem(previewIndex);
+}
+
+function showPreviewItem(idx) {
+  if (idx < 0 || idx >= searchResults.length) return;
+  previewIndex = idx;
+  const w = searchResults[idx];
+  document.getElementById('preview-img').src = w.full_url || w.image_url;
+  document.getElementById('preview-artist').textContent = [w.artist, w.jahr].filter(Boolean).join('  ·  ');
+  document.getElementById('preview-counter').textContent = `${idx+1} / ${searchResults.length}`;
+
+  // Check if already in collection
+  const inColl = activeCollectionItems.some(i => i.image_url === w.image_url);
+  const addBtn = document.getElementById('preview-add-btn');
+  addBtn.classList.toggle('added', inColl);
+  addBtn.textContent = inColl ? '✓ In Sammlung' : '+ Zur Sammlung';
+
+  if (previewCache[idx]) {
+    document.getElementById('preview-titel').textContent = previewCache[idx].titel || w.titel || '';
+    document.getElementById('preview-funfact').textContent = previewCache[idx].funfact || '';
+    document.getElementById('preview-loading').style.display = 'none';
+  } else {
+    document.getElementById('preview-titel').textContent = w.titel || '…';
+    document.getElementById('preview-funfact').textContent = '';
+    document.getElementById('preview-loading').style.display = 'block';
+    // Prefetch current
+    generateFunfactsAndTitle(w).then(r => {
+      previewCache[idx] = r;
+      searchResults[idx].titel = r.cleanedTitle || w.titel;
+      searchResults[idx].artist = r.cleanedArtist || w.artist;
+      searchResults[idx].funfact = r.funfact;
+      if (previewIndex === idx) {
+        document.getElementById('preview-titel').textContent = r.cleanedTitle || w.titel || '';
+        document.getElementById('preview-funfact').textContent = r.funfact || '';
+        document.getElementById('preview-loading').style.display = 'none';
+      }
+    });
+  }
+  // Prefetch next
+  if (idx+1 < searchResults.length && !previewCache[idx+1]) {
+    setTimeout(() => {
+      generateFunfactsAndTitle(searchResults[idx+1]).then(r => {
+        previewCache[idx+1] = r;
+        searchResults[idx+1].titel = r.cleanedTitle || searchResults[idx+1].titel;
+        searchResults[idx+1].artist = r.cleanedArtist || searchResults[idx+1].artist;
+        searchResults[idx+1].funfact = r.funfact;
+      });
+    }, 800);
+  }
+}
+
+document.getElementById('preview-prev').addEventListener('click', () => showPreviewItem(previewIndex-1));
+document.getElementById('preview-next').addEventListener('click', () => showPreviewItem(previewIndex+1));
+document.getElementById('preview-back').addEventListener('click', () => showScreen('gallery-screen'));
+
+document.getElementById('preview-add-btn').addEventListener('click', async () => {
+  const w = searchResults[previewIndex];
+  const inColl = activeCollectionItems.some(i => i.image_url === w.image_url);
+  if (inColl) return;
+  const item = {
+    collection_id: activeCollectionId,
+    image_url: w.image_url,
+    full_url: w.full_url || w.image_url,
+    titel: w.titel || '',
+    artist: w.artist || '',
+    jahr: w.jahr || '',
+    funfact: w.funfact || '',
+    position: activeCollectionItems.length
+  };
+  const res = await fetch(`${SB_URL}/rest/v1/collection_items`, {
+    method:'POST', headers:{...sbHeaders,'Prefer':'return=representation'},
+    body: JSON.stringify(item)
+  });
+  const [saved] = await res.json();
+  activeCollectionItems.push(saved);
+  const addBtn = document.getElementById('preview-add-btn');
+  addBtn.classList.add('added');
+  addBtn.textContent = '✓ In Sammlung';
+  // Auto-weiter
+  setTimeout(() => showPreviewItem(previewIndex+1), 400);
 });
 
-// ── Starten ────────────────────────────────────────────
-galleryStartBtn.addEventListener('click', async () => {
-  galleryStartBtn.disabled = true; galleryStartBtn.textContent = 'Startet…';
+// ── Wikimedia ──────────────────────────────────────────
+async function searchWikimedia(query, continueToken=null) {
+  const q = query.trim();
+  const categoryName = `Paintings by ${q}`;
+  const params = new URLSearchParams({
+    action:'query', generator:'categorymembers', gcmtitle:`Category:${categoryName}`,
+    gcmtype:'file', gcmlimit:'50', prop:'imageinfo', iiprop:'url|extmetadata',
+    iiurlwidth:'400', format:'json', origin:'*'
+  });
+  if (continueToken) Object.entries(continueToken).forEach(([k,v])=>params.set(k,v));
+  const res = await fetch(`${WIKI}?${params}`);
+  const data = await res.json();
+  if (data.error || !data.query) return searchWikimediaFallback(q, continueToken);
+  const pages = Object.values(data.query.pages||{});
+  const works = pages.map(p => {
+    const info = p.imageinfo?.[0]; if (!info) return null;
+    const meta = info.extmetadata||{};
+    return {
+      id: p.pageid, image_url: info.thumburl||info.url, full_url: info.url,
+      titel: cleanTitle(meta.ObjectName?.value || p.title.replace('File:','').replace(/\.[^.]+$/,'')),
+      artist: cleanArtist(meta.Artist?.value||q),
+      jahr: (meta.DateTimeOriginal?.value||meta.Date?.value||'').replace(/<[^>]*>/g,'').substring(0,4)
+    };
+  }).filter(w=>w&&w.image_url);
+  return { works, continueToken: data.continue||null };
+}
+
+async function searchWikimediaFallback(query, continueToken=null) {
+  const params = new URLSearchParams({
+    action:'query', generator:'search', gsrsearch:`${query} painting`,
+    gsrnamespace:'6', gsrlimit:'50', prop:'imageinfo', iiprop:'url|extmetadata',
+    iiurlwidth:'400', format:'json', origin:'*'
+  });
+  if (continueToken) Object.entries(continueToken).forEach(([k,v])=>params.set(k,v));
+  const res = await fetch(`${WIKI}?${params}`);
+  const data = await res.json();
+  const pages = Object.values(data.query?.pages||{});
+  const works = pages.map(p => {
+    const info = p.imageinfo?.[0]; if (!info?.url) return null;
+    const meta = info.extmetadata||{};
+    return {
+      id: p.pageid, image_url: info.thumburl||info.url, full_url: info.url,
+      titel: cleanTitle(meta.ObjectName?.value || p.title.replace('File:','').replace(/\.[^.]+$/,'')),
+      artist: cleanArtist(meta.Artist?.value||''),
+      jahr: (meta.DateTimeOriginal?.value||meta.Date?.value||'').replace(/<[^>]*>/g,'').substring(0,4)
+    };
+  }).filter(w=>w&&w.image_url);
+  return { works, continueToken: data.continue||null };
+}
+
+function cleanTitle(raw) {
+  if (!raw) return '';
+  let t = raw.replace(/<[^>]*>/g,' ').replace(/\s{2,}/g,' ').trim();
+  const deRaw = t.match(/German\s*:\s*"?([^"(;]+)/i);
+  if (deRaw) {
+    let de = deRaw[1].trim();
+    de = de.split(/\b(title|label|English|Dutch|French|Italian|Spanish|Setting |Sun |The )\b/i)[0].trim();
+    de = de.replace(/^["']+|["']+$/g,'').trim();
+    if (de.length > 1) return de;
+  }
+  const parts = t.split(/\b(English|German|Dutch|French|Italian|Spanish|title|label)\b/i);
+  t = parts[0].replace(/{{[^}]*}}/g,'').replace(/QS:[^\s,]*/g,'').replace(/"([^"]{2,60})"/g,'$1').replace(/\s{2,}/g,' ').replace(/^["'\s]+|["'\s]+$/g,'').trim();
+  return t||'';
+}
+
+function cleanArtist(raw) {
+  if (!raw) return '';
+  return raw.replace(/<[^>]*>/g,'').replace(/{{[^}]*}}/g,'').replace(/\[\[[^\]]*\|([^\]]*)\]\]/g,'$1').replace(/\[\[[^\]]*\]\]/g,'').replace(/\n.*/,'').replace(/\s{2,}/g,' ').trim();
+}
+
+// ── Claude API ─────────────────────────────────────────
+async function generateFunfactsAndTitle(work) {
+  const key = getKey();
+  if (!key) return { funfact:'', cleanedTitle:work.titel, cleanedArtist:work.artist };
   try {
-    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
-    videoFeed.srcObject = stream;
-    await new Promise(r => videoFeed.onloadedmetadata = r);
-  } catch(e) {
-    alert('Kamera nicht verfügbar: ' + e.message);
-    galleryStartBtn.disabled = false; galleryStartBtn.textContent = 'Starten'; return;
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-6', max_tokens:500,
+        messages:[{role:'user',content:`Du bist ein Kunstexperte. Rohdaten aus Wikimedia Commons:\n\nSuchbegriff: ${currentQuery}\nRohtitel: ${work.titel}\nRoh-Künstler: ${work.artist}\nJahr: ${work.jahr}\n\nAufgabe 1 — Bildtitel: Extrahiere den echten Titel (Wikimedia enthält oft Sprachangaben, Dateinamen, Zahlen, "title", "label"). Auf Deutsch falls vorhanden, sonst Englisch. Wenn kein sinnvoller Titel: leer lassen.\n\nAufgabe 2 — Künstler: Wenn der Suchbegriff ein Künstlername ist, verwende ihn direkt. Sonst bereinige den Roh-Künstler. Jahreszahlen oder "circ" weglassen.\n\nAufgabe 3 — Funfacts: 2-3 kurze Funfacts auf Deutsch. Nur Deutsch, kein Gedicht, kein Fremdtext, keine Nummerierung, keine Emojis. Kurze Sätze durch Zeilenumbruch getrennt. Seriös, überraschend, max. 60 Wörter.\n\nAntworte NUR mit diesem JSON (kein Markdown):\n{"titel":"Bereinigter Titel","artist":"Korrekter Künstlername","funfact":"Funfact 1\\n\\nFunfact 2"}`}]
+      })
+    });
+    const d = await res.json();
+    const text = (d.content?.[0]?.text||'{}').replace(/```json|```/g,'').trim();
+    const p = JSON.parse(text);
+    return { cleanedTitle:p.titel||work.titel, cleanedArtist:p.artist||work.artist, funfact:p.funfact||'' };
+  } catch(e) { return { funfact:'', cleanedTitle:work.titel, cleanedArtist:work.artist }; }
+}
+
+// ── Sammlung starten ───────────────────────────────────
+async function startCollection(id, name) {
+  activeCollectionId = id;
+  activeCollectionName = name;
+  const res = await fetch(`${SB_URL}/rest/v1/collection_items?collection_id=eq.${id}&select=*&order=position.asc`, { headers: sbHeaders });
+  activeCollectionItems = await res.json();
+  if (!activeCollectionItems.length) { alert('Diese Sammlung ist noch leer.'); return; }
+
+  // Kamera starten
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video:{facingMode:'user'}, audio:false });
+    document.getElementById('video-feed').srcObject = stream;
+    await new Promise(r => document.getElementById('video-feed').onloadedmetadata = r);
+  } catch(e) { alert('Kamera: '+e.message); return; }
+
+  shuffleQueue = [...activeCollectionItems];
+  for (let i=shuffleQueue.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [shuffleQueue[i],shuffleQueue[j]]=[shuffleQueue[j],shuffleQueue[i]];
   }
-  await loadBlockedIds();
-  shuffleQueue = [...selectedWorks.map(w => w.id)];
-  for (let i = shuffleQueue.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i+1));
-    [shuffleQueue[i], shuffleQueue[j]] = [shuffleQueue[j], shuffleQueue[i]];
-  }
-  // Work-Cache aus selectedWorks
-  window._workCache = {};
-  selectedWorks.forEach(w => { window._workCache[w.id] = w; });
-  galleryScreen.style.display = 'none';
-  displayScreen.style.display = 'block';
-  galleryStartBtn.textContent = 'Starten';
-  statusBar.textContent = 'WARTEN AUF BEWEGUNG';
-  prefetchPromise = prefetchNext().then(w => { nextWork = w; });
+
+  showScreen('display-screen');
+  document.getElementById('status-bar').textContent = 'WARTEN AUF BEWEGUNG';
+  prefetchPromise = prefetchNext().then(w=>{nextWork=w;});
   startMotionDetection();
-});
-
-// ── Supabase: geblockte IDs ────────────────────────────
-async function loadBlockedIds() {
-  try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/${BLOCKED_TABLE}?select=met_id`, {
-      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
-    });
-    if (!res.ok) return;
-    const data = await res.json();
-    data.forEach(r => blockedIds.add(r.met_id));
-  } catch(e) {}
-}
-
-async function blockWork(id) {
-  blockedIds.add(id);
-  try {
-    await fetch(`${SUPABASE_URL}/rest/v1/${BLOCKED_TABLE}`, {
-      method: 'POST',
-      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-      body: JSON.stringify({ met_id: id })
-    });
-  } catch(e) {}
 }
 
 // ── Prefetch ───────────────────────────────────────────
 async function prefetchNext() {
-  prefetchDot.classList.add('loading');
-  let work = null;
-  while (!work && shuffleQueue.length) {
-    const id = shuffleQueue.shift();
-    if (blockedIds.has(id)) continue;
-    work = window._workCache?.[id] || null;
-    if (!work) {
-      // Aus IndexedDB holen
-      work = await new Promise(resolve => {
-        const tx = db.transaction(STORE_NAME, 'readonly');
-        const req = tx.objectStore(STORE_NAME).get(id);
-        req.onsuccess = () => resolve(req.result || null);
-        req.onerror = () => resolve(null);
-      });
+  document.getElementById('prefetch-dot').classList.add('loading');
+  if (!shuffleQueue.length) {
+    shuffleQueue = [...activeCollectionItems];
+    for (let i=shuffleQueue.length-1;i>0;i--){
+      const j=Math.floor(Math.random()*(i+1));
+      [shuffleQueue[i],shuffleQueue[j]]=[shuffleQueue[j],shuffleQueue[i]];
     }
   }
-  if (!work) { prefetchDot.classList.remove('loading'); return null; }
-
-  // Bild vorladen
-  await new Promise(resolve => {
-    const img = new Image(); img.onload = resolve; img.onerror = resolve; img.src = work.image_url;
-  });
-
-  // Funfacts generieren
-  work.funfact = await generateFunfacts(work);
-  prefetchDot.classList.remove('loading');
-  return work;
-}
-
-// ── Claude Funfacts ────────────────────────────────────
-async function generateFunfacts(work) {
-  const key = getAnthropicKey();
-  if (!key) return '';
-  try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 400,
-        messages: [{ role: 'user', content: `Du bist ein Kunstexperte. Schreibe Funfacts über dieses Werk:\n\nTitel: ${work.titel}\nKünstler: ${work.artist}\nJahr: ${work.jahr}\nMedium: ${work.medium}\n\n3-4 kurze Fun Facts auf Deutsch. Keine Nummerierung, keine Emojis, keine Aufzählungszeichen. Fließtext, durch Zeilenumbrüche getrennt. Seriös, lebendig, historisch korrekt — überraschende Details die im Gedächtnis bleiben.` }]
-      })
-    });
-    const data = await res.json();
-    return data.content?.[0]?.text || '';
-  } catch(e) { return ''; }
+  const work = shuffleQueue.shift();
+  if (work) {
+    await new Promise(r=>{const img=new Image();img.onload=r;img.onerror=r;img.src=work.full_url||work.image_url;});
+  }
+  document.getElementById('prefetch-dot').classList.remove('loading');
+  return work||null;
 }
 
 // ── Werk anzeigen ──────────────────────────────────────
 async function showWork(work) {
   if (!work) return;
   currentWork = work;
-  artImg.src = work.image_url;
-  document.getElementById('d-titel').textContent = work.titel;
-  document.getElementById('d-artist').textContent = [work.artist, work.jahr].filter(Boolean).join(' · ');
-  document.getElementById('ff-titel').textContent = work.titel;
-  document.getElementById('ff-artist').textContent = [work.artist, work.jahr].filter(Boolean).join(' · ');
-  ffText.textContent = work.funfact || '…';
-  artImg.classList.add('visible');
-  titleBar.classList.add('visible');
-  infoBtn.classList.add('visible');
-  statusBar.textContent = 'AKTIV';
-
-  // Nächstes vorbereiten
-  if (!shuffleQueue.length) {
-    // Queue leer — neu mischen
-    shuffleQueue = selectedWorks.map(w => w.id).filter(id => !blockedIds.has(id));
-    for (let i = shuffleQueue.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i+1));
-      [shuffleQueue[i], shuffleQueue[j]] = [shuffleQueue[j], shuffleQueue[i]];
-    }
-  }
-  prefetchPromise = prefetchNext().then(w => { nextWork = w; });
-
-  if (audioEl && audioUnlocked) { audioEl.currentTime = 0; audioEl.play().catch(()=>{}); fadeAudio(0, volume, 1500); }
+  document.getElementById('art-img').src = work.full_url||work.image_url;
+  document.getElementById('d-artist').textContent = [work.artist,work.jahr].filter(Boolean).join('  ·  ');
+  document.getElementById('d-titel').textContent = work.titel||'';
+  document.getElementById('ff-titel').textContent = work.titel||'';
+  document.getElementById('ff-artist').textContent = [work.artist,work.jahr].filter(Boolean).join(' · ');
+  document.getElementById('ff-text').textContent = work.funfact||'…';
+  document.getElementById('art-img').classList.add('visible');
+  document.getElementById('title-bar').classList.add('visible');
+  document.getElementById('info-btn').classList.add('visible');
+  document.getElementById('status-bar').textContent = 'AKTIV';
+  setTimeout(()=>{ prefetchPromise=prefetchNext().then(w=>{nextWork=w;}); },500);
+  if (audioEl&&audioUnlocked){audioEl.currentTime=0;audioEl.play().catch(()=>{});fadeAudio(0,volume,1500);}
 }
 
 // ── Motion Detection ───────────────────────────────────
-function startMotionDetection() { prevPixels = null; scheduleNext(); }
-function scheduleNext() {
-  const interval = isDisplaying ? 400 : 150;
-  motionInterval = setTimeout(() => { checkMotion(); scheduleNext(); }, interval);
-}
-function checkMotion() {
-  if (videoFeed.readyState < 2) return;
-  ctx.drawImage(videoFeed, 0, 0, W, H);
-  const pixels = ctx.getImageData(0, 0, W, H).data;
-  if (!prevPixels) { prevPixels = new Uint8ClampedArray(pixels); return; }
-  let diff = 0;
-  for (let i = 0; i < pixels.length; i += 4)
-    diff += Math.abs(pixels[i]-prevPixels[i]) + Math.abs(pixels[i+1]-prevPixels[i+1]) + Math.abs(pixels[i+2]-prevPixels[i+2]);
-  prevPixels = new Uint8ClampedArray(pixels);
-  if (diff / (W*H*3) > sensitivityThreshold) onMotionDetected();
+const ctx = document.getElementById('diff-canvas').getContext('2d',{willReadFrequently:true});
+function startMotionDetection(){prevPixels=null;scheduleNext();}
+function scheduleNext(){motionInterval=setTimeout(()=>{checkMotion();scheduleNext();},isDisplaying?400:150);}
+function checkMotion(){
+  const vf=document.getElementById('video-feed');
+  if(vf.readyState<2)return;
+  ctx.drawImage(vf,0,0,W,H);
+  const pixels=ctx.getImageData(0,0,W,H).data;
+  if(!prevPixels){prevPixels=new Uint8ClampedArray(pixels);return;}
+  let diff=0;
+  for(let i=0;i<pixels.length;i+=4)diff+=Math.abs(pixels[i]-prevPixels[i])+Math.abs(pixels[i+1]-prevPixels[i+1])+Math.abs(pixels[i+2]-prevPixels[i+2]);
+  prevPixels=new Uint8ClampedArray(pixels);
+  if(diff/(W*H*3)>sensitivityThreshold)onMotionDetected();
 }
 
-async function onMotionDetected() {
-  if (hideTimer) clearTimeout(hideTimer);
-  if (!isDisplaying) {
-    isDisplaying = true;
-    let work = nextWork; nextWork = null;
-    if (!work) {
-      statusBar.textContent = 'LÄDT…';
-      if (prefetchPromise) { await prefetchPromise; work = nextWork; nextWork = null; }
-      if (!work) work = await prefetchNext();
+async function onMotionDetected(){
+  if(hideTimer)clearTimeout(hideTimer);
+  if(!isDisplaying){
+    isDisplaying=true;
+    let work=nextWork;nextWork=null;
+    if(!work){
+      document.getElementById('status-bar').textContent='LÄDT…';
+      if(prefetchPromise){await prefetchPromise;work=nextWork;nextWork=null;}
     }
+    if(!work)work=await prefetchNext();
     await showWork(work);
   }
-  hideTimer = setTimeout(async () => {
-    artImg.classList.remove('visible');
-    titleBar.classList.remove('visible');
-    infoBtn.classList.remove('visible');
-    funfactOverlay.classList.remove('open');
-    isDisplaying = false;
-    statusBar.textContent = 'WARTEN AUF BEWEGUNG';
-    hideTimer = null;
-    if (audioEl) fadeAudio(volume, 0, 2000, () => { audioEl.pause(); audioEl.currentTime = 0; });
-  }, displayDuration * 1000);
+  hideTimer=setTimeout(()=>{
+    document.getElementById('art-img').classList.remove('visible');
+    document.getElementById('title-bar').classList.remove('visible');
+    document.getElementById('info-btn').classList.remove('visible');
+    document.getElementById('funfact-overlay').classList.remove('open');
+    isDisplaying=false;
+    document.getElementById('status-bar').textContent='WARTEN AUF BEWEGUNG';
+    hideTimer=null;
+    if(audioEl)fadeAudio(volume,0,2000,()=>{audioEl.pause();audioEl.currentTime=0;});
+  },displayDuration*1000);
 }
 
-// ── Sperren ────────────────────────────────────────────
-let deleteConfirmTimer = null;
-document.getElementById('delete-btn').addEventListener('click', () => {
-  document.getElementById('delete-confirm').style.display = 'block';
-  document.getElementById('delete-btn').style.opacity = '0';
-  if (deleteConfirmTimer) clearTimeout(deleteConfirmTimer);
-  deleteConfirmTimer = setTimeout(() => {
-    document.getElementById('delete-confirm').style.display = 'none';
-    document.getElementById('delete-btn').style.opacity = '';
-  }, 3000);
+// ── Entfernen aus Sammlung ─────────────────────────────
+let delTimer=null;
+document.getElementById('delete-btn').addEventListener('click',()=>{
+  document.getElementById('delete-confirm').style.display='block';
+  document.getElementById('delete-btn').style.opacity='0';
+  if(delTimer)clearTimeout(delTimer);
+  delTimer=setTimeout(()=>{document.getElementById('delete-confirm').style.display='none';document.getElementById('delete-btn').style.opacity='';},3000);
 });
-document.getElementById('delete-confirm').addEventListener('click', async () => {
-  if (deleteConfirmTimer) clearTimeout(deleteConfirmTimer);
-  document.getElementById('delete-confirm').style.display = 'none';
-  document.getElementById('delete-btn').style.opacity = '';
-  if (currentWork) await blockWork(currentWork.id);
-  isDisplaying = false;
-  if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
-  artImg.classList.remove('visible');
-  titleBar.classList.remove('visible');
-  infoBtn.classList.remove('visible');
-  funfactOverlay.classList.remove('open');
+document.getElementById('delete-confirm').addEventListener('click',async()=>{
+  if(delTimer)clearTimeout(delTimer);
+  document.getElementById('delete-confirm').style.display='none';
+  document.getElementById('delete-btn').style.opacity='';
+  if(currentWork?.id){
+    await fetch(`${SB_URL}/rest/v1/collection_items?id=eq.${currentWork.id}`,{method:'DELETE',headers:sbHeaders});
+    activeCollectionItems=activeCollectionItems.filter(i=>i.id!==currentWork.id);
+    shuffleQueue=shuffleQueue.filter(i=>i.id!==currentWork.id);
+  }
+  isDisplaying=false;if(hideTimer){clearTimeout(hideTimer);hideTimer=null;}
+  document.getElementById('art-img').classList.remove('visible');
+  document.getElementById('title-bar').classList.remove('visible');
+  document.getElementById('info-btn').classList.remove('visible');
+  document.getElementById('funfact-overlay').classList.remove('open');
   onMotionDetected();
 });
 
-// ── Info ───────────────────────────────────────────────
-infoBtn.addEventListener('click', () => funfactOverlay.classList.add('open'));
-document.getElementById('back-btn').addEventListener('click', () => funfactOverlay.classList.remove('open'));
-
-// ── Exit ───────────────────────────────────────────────
-document.getElementById('exit-btn').addEventListener('click', () => {
-  if (motionInterval) { clearTimeout(motionInterval); motionInterval = null; }
-  if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
-  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
-  if (audioEl) { audioEl.pause(); audioEl.currentTime = 0; }
-  isDisplaying = false; prevPixels = null;
-  displayScreen.style.display = 'none';
-  setupScreen.style.display = 'flex';
+// ── Info / Exit ────────────────────────────────────────
+document.getElementById('info-btn').addEventListener('click',()=>document.getElementById('funfact-overlay').classList.add('open'));
+document.getElementById('back-btn').addEventListener('click',()=>document.getElementById('funfact-overlay').classList.remove('open'));
+document.getElementById('exit-btn').addEventListener('click',()=>{
+  if(motionInterval){clearTimeout(motionInterval);motionInterval=null;}
+  if(hideTimer){clearTimeout(hideTimer);hideTimer=null;}
+  if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}
+  if(audioEl){audioEl.pause();audioEl.currentTime=0;}
+  isDisplaying=false;prevPixels=null;
+  showScreen('collections-screen');
 });
 
 // ── Audio Fade ─────────────────────────────────────────
-function fadeAudio(from, to, dur, onDone) {
-  if (fadeTimer) clearInterval(fadeTimer);
-  const steps = 30, delta = (to-from)/steps; let step = 0;
-  audioEl.volume = from;
-  fadeTimer = setInterval(() => {
-    step++; audioEl.volume = Math.min(1, Math.max(0, from + delta*step));
-    if (step >= steps) { clearInterval(fadeTimer); fadeTimer = null; if (onDone) onDone(); }
-  }, dur/steps);
+function fadeAudio(from,to,dur,onDone){
+  if(fadeTimer)clearInterval(fadeTimer);
+  const steps=30,delta=(to-from)/steps;let step=0;
+  audioEl.volume=from;
+  fadeTimer=setInterval(()=>{step++;audioEl.volume=Math.min(1,Math.max(0,from+delta*step));if(step>=steps){clearInterval(fadeTimer);fadeTimer=null;if(onDone)onDone();}},dur/steps);
 }
-
-// ── Start ──────────────────────────────────────────────
-initDB();
 </script>
 </body>
 </html>
