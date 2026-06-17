@@ -135,8 +135,7 @@ canvas{display:none;}
 #status-bar{position:absolute;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.1);border-radius:100px;padding:7px 18px;font-size:11px;color:rgba(255,255,255,0.35);letter-spacing:0.08em;white-space:nowrap;opacity:0;transition:opacity 0.3s;}
 #display-screen:hover #status-bar{opacity:1;}
 #prefetch-dot{position:absolute;bottom:14px;right:14px;width:6px;height:6px;border-radius:50%;background:#c9a84c;opacity:0;}
-#skip-btn{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,0.08);border:0.5px solid rgba(255,255,255,0.15);border-radius:100px;padding:10px 28px;font-size:13px;color:rgba(255,255,255,0.5);cursor:pointer;-webkit-appearance:none;opacity:0;transition:opacity 0.3s;letter-spacing:0.05em;}
-#display-screen:hover #skip-btn{opacity:1;}
+#display-screen:hover #nav-btns{opacity:1;}
 /* Inline-Edit Overlay */
 #inline-edit-overlay{display:none;position:absolute;inset:0;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;padding:40px;backdrop-filter:blur(4px);}
 #inline-edit-overlay.open{display:flex;}
@@ -282,7 +281,10 @@ canvas{display:none;}
   <button id="delete-confirm">Wirklich entfernen?</button>
   <div id="status-bar">WARTEN AUF BEWEGUNG</div>
   <div id="prefetch-dot"></div>
-  <button id="skip-btn">› Nächstes</button>
+  <div id="nav-btns" style="position:absolute;bottom:24px;left:50%;transform:translateX(-50%);display:flex;gap:10px;opacity:1;z-index:10;">
+    <button id="prev-btn" style="background:rgba(255,255,255,0.08);border:0.5px solid rgba(255,255,255,0.15);border-radius:100px;padding:10px 24px;font-size:13px;color:rgba(255,255,255,0.5);cursor:pointer;-webkit-appearance:none;letter-spacing:0.05em;">‹ Zurück</button>
+    <button id="skip-btn" style="background:rgba(255,255,255,0.08);border:0.5px solid rgba(255,255,255,0.15);border-radius:100px;padding:10px 24px;font-size:13px;color:rgba(255,255,255,0.5);cursor:pointer;-webkit-appearance:none;letter-spacing:0.05em;">› Nächstes</button>
+  </div>
   <div id="inline-edit-overlay">
     <div class="inline-edit-box">
       <h3>Bearbeiten</h3>
@@ -868,6 +870,7 @@ async function startCollection(id, name) {
     [shuffleQueue[i],shuffleQueue[j]]=[shuffleQueue[j],shuffleQueue[i]];
   }
 
+  displayHistory = []; historyIndex = -1;
   showScreen('display-screen');
   document.getElementById('status-bar').textContent = 'WARTEN AUF BEWEGUNG';
   prefetchPromise = prefetchNext().then(w=>{nextWork=w;});
@@ -893,9 +896,15 @@ async function prefetchNext() {
 }
 
 // ── Werk anzeigen ──────────────────────────────────────
-async function showWork(work) {
+async function showWork(work, addToHistory=true) {
   if (!work) return;
   currentWork = work;
+  if (addToHistory) {
+    displayHistory = displayHistory.slice(0, historyIndex + 1);
+    displayHistory.push(work);
+    if (displayHistory.length > 50) displayHistory.shift();
+    historyIndex = displayHistory.length - 1;
+  }
   document.getElementById('art-img').src = work.full_url||work.image_url;
   document.getElementById('d-artist').textContent = [work.artist,work.jahr].filter(Boolean).join('  ·  ');
   document.getElementById('d-titel').textContent = work.titel||'';
@@ -977,7 +986,11 @@ document.getElementById('delete-confirm').addEventListener('click',async()=>{
 
 // ── Info / Exit ────────────────────────────────────────
 // ── Skip ──────────────────────────────────────────────
-document.getElementById('skip-btn').addEventListener('click', async () => {
+// ── History für Vor/Zurück ────────────────────────────
+let displayHistory = [];
+let historyIndex   = -1;
+
+function hideCurrentWork() {
   if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
   document.getElementById('art-img').classList.remove('visible');
   document.getElementById('title-bar').classList.remove('visible');
@@ -985,7 +998,26 @@ document.getElementById('skip-btn').addEventListener('click', async () => {
   document.getElementById('funfact-overlay').classList.remove('open');
   isDisplaying = false;
   if (audioEl) fadeAudio(volume, 0, 500, () => { audioEl.pause(); audioEl.currentTime = 0; });
-  await onMotionDetected();
+}
+
+document.getElementById('skip-btn').addEventListener('click', async () => {
+  hideCurrentWork();
+  // Vorwärts in History oder neues Bild
+  if (historyIndex < displayHistory.length - 1) {
+    historyIndex++;
+    await showWork(displayHistory[historyIndex], false);
+    isDisplaying = true;
+  } else {
+    await onMotionDetected();
+  }
+});
+
+document.getElementById('prev-btn').addEventListener('click', async () => {
+  if (historyIndex <= 0) return;
+  hideCurrentWork();
+  historyIndex--;
+  await showWork(displayHistory[historyIndex], false);
+  isDisplaying = true;
 });
 
 // ── Inline Edit ────────────────────────────────────────
