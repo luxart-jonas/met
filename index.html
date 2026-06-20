@@ -304,6 +304,7 @@ canvas{display:none;}
     <button class="btn-ghost" id="edit-copy-mode-btn" style="margin-right:8px;">⎘ Auswählen & Kopieren</button>
     <button class="btn-ghost" id="edit-upload-btn" style="margin-right:8px;">⬆ Eigene Bilder</button>
     <button class="btn-ghost" id="edit-add-more-btn" style="margin-right:8px;">+ Wikimedia suchen</button>
+    <button class="btn-ghost" id="edit-regen-btn" style="margin-right:8px;">✦ Funfacts nachgenerieren</button>
     <button class="btn-ghost" id="edit-delete-coll-btn" style="color:#ef4444;border-color:#ef4444;">Sammlung löschen</button>
   </div>
 </div>
@@ -759,17 +760,17 @@ document.getElementById('upload-save-btn').addEventListener('click', async () =>
 
       const image_url = `${SB_URL}/storage/v1/object/public/collection-images/${filename}`;
 
-      // 2. Claude für Funfacts + Jahr
+      // 2. Claude für Funfacts + Jahr (mit Bild-Vision)
       if (statusEl) statusEl.textContent = 'Analysiere…';
-      const funfactResult = await generateFunfactsForUpload(entry.artist, entry.titel);
+      const funfactResult = await generateFunfactsForUpload(entry.artist, entry.titel, entry.file);
 
       // 3. In collection_items speichern
       const item = {
         collection_id: activeCollectionId,
         image_url,
         full_url: image_url,
-        titel: entry.titel,
-        artist: entry.artist,
+        titel: funfactResult.titel || entry.titel,
+        artist: funfactResult.artist || entry.artist,
         jahr: funfactResult.jahr || '',
         funfact: funfactResult.funfact || '',
         position: activeCollectionItems.length
@@ -795,25 +796,47 @@ document.getElementById('upload-save-btn').addEventListener('click', async () =>
   }, 1200);
 });
 
-async function generateFunfactsForUpload(artist, titel) {
+async function generateFunfactsForUpload(artist, titel, file) {
   const key = getKey();
-  if (!key) return { funfact: '', jahr: '' };
+  if (!key) return { funfact: '', jahr: '', titel: titel||'', artist: artist||'' };
   try {
+    // Bild zu Base64 für Vision-Analyse
+    const base64 = await new Promise((res, rej) => {
+      const reader = new FileReader();
+      reader.onload = () => res(reader.result.split(',')[1]);
+      reader.onerror = () => rej(new Error('Lesefehler'));
+      reader.readAsDataURL(file);
+    });
+    const mediaType = file.type || 'image/jpeg';
+    const textHint = (artist || titel)
+      ? `Hinweis aus Dateiname: "${titel}"${artist ? ' von ' + artist : ''}.`
+      : 'Kein Hinweis aus Dateiname verfügbar.';
+
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method:'POST',
       headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
       body: JSON.stringify({
-        model:'claude-sonnet-4-6', max_tokens:300,
-        messages:[{role:'user',content:`Kunstwerk: "${titel}" von ${artist}.
+        model:'claude-sonnet-4-6', max_tokens:400,
+        messages:[{role:'user', content:[
+          { type:'image', source:{ type:'base64', media_type: mediaType, data: base64 } },
+          { type:'text', text:`Du bist ein Kunstexperte. Analysiere dieses Kunstwerk.
+${textHint}
 
 Antworte NUR mit diesem JSON (kein Markdown):
-{"jahr":"Entstehungsjahr oder Zeitraum falls bekannt, sonst leer","funfact":"2-3 kurze Funfacts auf Deutsch. Keine Nummerierung, keine Emojis. Sätze durch Zeilenumbruch getrennt. Seriös, überraschend, max. 60 Wörter."}`}]
+{"titel":"Titel des Werks oder leer","artist":"Künstlername oder leer","jahr":"Entstehungsjahr oder leer","funfact":"3-4 kurze Fun Facts auf Deutsch. Schreibe: modern, lebendig, seriös und historisch korrekt. Keine trockenen Kunstgeschichte-Vorlesungen, sondern überraschende Details die im Gedächtnis bleiben. Kurz und prägnant. Keine Nummerierung, keine Emojis. Sätze durch Zeilenumbruch getrennt."}` }
+        ]}]
       })
     });
     const d = await res.json();
-    const text = (d.content?.[0]?.text||'{}').replace(/\`\`\`json|\`\`\`/g,'').trim();
-    return JSON.parse(text);
-  } catch(e) { return { funfact:'', jahr:'' }; }
+    const text = (d.content?.[0]?.text||'{}').replace(/```json|```/g,'').trim();
+    const p = JSON.parse(text);
+    return {
+      funfact: p.funfact || '',
+      jahr: p.jahr || '',
+      titel: p.titel || titel || '',
+      artist: p.artist || artist || ''
+    };
+  } catch(e) { return { funfact:'', jahr:'', titel: titel||'', artist: artist||'' }; }
 }
 document.getElementById('edit-preview-btn').addEventListener('click', () => {
   if (!activeCollectionItems.length) { alert('Sammlung ist leer.'); return; }
@@ -829,6 +852,28 @@ document.getElementById('edit-preview-btn').addEventListener('click', () => {
 });
 document.getElementById('edit-play-btn').addEventListener('click', () => startCollection(activeCollectionId, activeCollectionName));
 document.getElementById('edit-add-more-btn').addEventListener('click', openGalleryForCollection);
+document.getElementById('edit-regen-btn').addEventListener('click', async () => {
+  const missing = activeCollectionItems.filter(i => !i.funfact || i.funfact.trim() === '');
+  if (!missing.length) { alert('Alle Einträge haben bereits einen Funfact.'); return; }
+  const btn = document.getElementById('edit-regen-btn');
+  btn.disabled = true;
+  for (let i = 0; i < missing.length; i++) {
+    const item = missing[i];
+    btn.textContent = `✦ ${i+1} / ${missing.length} …`;
+    const r = await generateFunfactsAndTitle({ titel: item.titel, artist: item.artist, jahr: item.jahr });
+    const funfact = r.funfact || '';
+    if (!funfact) continue;
+    item.funfact = funfact;
+    await fetch(`${SB_URL}/rest/v1/collection_items?id=eq.${item.id}`, {
+      method:'PATCH', headers: sbHeaders,
+      body: JSON.stringify({ funfact })
+    });
+  }
+  btn.textContent = '✦ Funfacts nachgenerieren';
+  btn.disabled = false;
+  renderEditList();
+});
+
 document.getElementById('edit-delete-coll-btn').addEventListener('click', async () => {
   if (!confirm(`Sammlung "${activeCollectionName}" löschen?`)) return;
   await fetch(`${SB_URL}/rest/v1/collection_items?collection_id=eq.${activeCollectionId}`, { method:'DELETE', headers: sbHeaders });
@@ -1152,7 +1197,7 @@ async function generateFunfactsAndTitle(work) {
       headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
       body: JSON.stringify({
         model:'claude-sonnet-4-6', max_tokens:500,
-        messages:[{role:'user',content:`Du bist ein Kunstexperte. Rohdaten aus Wikimedia Commons:\n\nSuchbegriff: ${currentQuery}\nRohtitel: ${work.titel}\nRoh-Künstler: ${work.artist}\nJahr: ${work.jahr}\n\nAufgabe 1 — Bildtitel: Extrahiere den echten Titel (Wikimedia enthält oft Sprachangaben, Dateinamen, Zahlen, "title", "label"). Auf Deutsch falls vorhanden, sonst Englisch. Wenn kein sinnvoller Titel: leer lassen.\n\nAufgabe 2 — Künstler: Wenn der Suchbegriff ein Künstlername ist, verwende ihn direkt. Sonst bereinige den Roh-Künstler. Jahreszahlen oder "circ" weglassen.\n\nAufgabe 3 — Funfacts: 2-3 kurze Funfacts auf Deutsch. Nur Deutsch, kein Gedicht, kein Fremdtext, keine Nummerierung, keine Emojis. Kurze Sätze durch Zeilenumbruch getrennt. Seriös, überraschend, max. 60 Wörter.\n\nAntworte NUR mit diesem JSON (kein Markdown):\n{"titel":"Bereinigter Titel","artist":"Korrekter Künstlername","funfact":"Funfact 1\\n\\nFunfact 2"}`}]
+        messages:[{role:'user',content:`Du bist ein Kunstexperte. Rohdaten aus Wikimedia Commons:\n\nSuchbegriff: ${currentQuery || work.artist || ''}\nRohtitel: ${work.titel}\nRoh-Künstler: ${work.artist}\nJahr: ${work.jahr}\n\nAufgabe 1 — Bildtitel: Extrahiere den echten Titel (Wikimedia enthält oft Sprachangaben, Dateinamen, Zahlen, "title", "label"). Auf Deutsch falls vorhanden, sonst Englisch. Wenn kein sinnvoller Titel: leer lassen.\n\nAufgabe 2 — Künstler: Wenn der Suchbegriff ein Künstlername ist, verwende ihn direkt. Sonst bereinige den Roh-Künstler. Jahreszahlen oder "circ" weglassen.\n\nAufgabe 3 — Funfacts: 2-3 kurze Funfacts auf Deutsch. Nur Deutsch, kein Gedicht, kein Fremdtext, keine Nummerierung, keine Emojis. Kurze Sätze durch Zeilenumbruch getrennt. Seriös, überraschend, max. 60 Wörter.\n\nAntworte NUR mit diesem JSON (kein Markdown):\n{"titel":"Bereinigter Titel","artist":"Korrekter Künstlername","funfact":"Funfact 1\\n\\nFunfact 2"}`}]
       })
     });
     const d = await res.json();
